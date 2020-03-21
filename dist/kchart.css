@@ -1,0 +1,70 @@
+html, body, ul {
+  margin: 0;
+  padding: 0; }
+
+.toolbar {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  z-index: 999; }
+
+.toolbar span {
+  float: left;
+  margin-left: 5px;
+  width: 20px;
+  height: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #555;
+  background-color: #eee;
+  text-align: center;
+  line-height: 16px;
+  border-radius: 20%;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+   -ms-user-select: none;
+       user-select: none; }
+
+.toolbar span:hover {
+  color: #06c;
+  background-color: #e2f8ff; }
+
+#k-tooltips {
+  width: 132px; }
+
+#k-tooltips ul {
+  list-style: none;
+  width: 120px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(218, 222, 229, 0.6);
+  font-size: 12px;
+  line-height: 18px;
+  padding: 5px;
+  margin: 0; }
+
+#k-tooltips ul li {
+  list-style: none; }
+
+#k-tooltips ul li span {
+  text-align: left; }
+
+#k-tooltips ul li span:last-child {
+  float: right; }
+
+.sel-list {
+  display: none;
+  list-style: none;
+  position: absolute;
+  top: 21px;
+  left: -20px;
+  line-height: 26px;
+  width: 70px;
+  box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.4);
+  background: #fff;
+  text-align: center;
+  z-index: 222;
+  font-size: 12px;
+  cursor: pointer; }
+
+.sel-list li.active {
+  color: #06c; }
