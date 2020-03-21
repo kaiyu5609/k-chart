@@ -40,6 +40,8 @@ class Kline extends Chart {
 
         this._initStage()
 
+        this._initElements()
+
         this.mouseLine = new MouseLine(this, options)
 
         this._bindEvents()
@@ -51,6 +53,30 @@ class Kline extends Chart {
                 mode: 'init'
             })
         }
+    }
+
+    _initStage() {
+        var { el, width, height } = this.$options
+
+        var stage = this.stage = new Konva.Stage({
+            container: el,
+            width,
+            height
+        })
+
+        var main = this.layers.main = new Konva.Layer()
+        stage.add(main)
+
+        var maLine = this.layers.maLine = new Konva.Layer()
+        stage.add(maLine)
+
+        var tickLabel = this.layers.tickLabel = new Konva.Layer()
+        stage.add(tickLabel)
+
+        var mouseLine = this.layers.mouseLine = new Konva.Layer()
+        stage.add(mouseLine)
+
+        stage.container().style.position = 'relative'
     }
 
     _initElements() {
@@ -93,30 +119,6 @@ class Kline extends Chart {
         })
 
         return $selList
-    }
-
-    _initStage() {
-        var { el, width, height } = this.$options
-
-        var stage = this.stage = new Konva.Stage({
-            container: el,
-            width,
-            height
-        })
-
-        var main = this.layers.main = new Konva.Layer()
-        stage.add(main)
-
-        var maLine = this.layers.maLine = new Konva.Layer()
-        stage.add(maLine)
-
-        var tickLabel = this.layers.tickLabel = new Konva.Layer()
-        stage.add(tickLabel)
-
-        var mouseLine = this.layers.mouseLine = new Konva.Layer()
-        stage.add(mouseLine)
-
-        stage.container().style.position = 'relative'
     }
 
     _bindEvents() {

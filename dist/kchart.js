@@ -616,8 +616,6 @@
 
       _this._initOptions();
 
-      _this._initElements();
-
       return _this;
     }
 
@@ -666,11 +664,11 @@
         });
       }
     }, {
-      key: "_initElements",
-      value: function _initElements() {}
-    }, {
       key: "_initStage",
       value: function _initStage() {}
+    }, {
+      key: "_initElements",
+      value: function _initElements() {}
     }, {
       key: "_bindEvents",
       value: function _bindEvents() {
@@ -1336,6 +1334,8 @@
 
       _this._initStage();
 
+      _this._initElements();
+
       _this.mouseLine = new MouseLine(_assertThisInitialized(_this), options);
 
       _this._bindEvents();
@@ -1352,6 +1352,28 @@
     }
 
     _createClass(Kline, [{
+      key: "_initStage",
+      value: function _initStage() {
+        var _this$$options = this.$options,
+            el = _this$$options.el,
+            width = _this$$options.width,
+            height = _this$$options.height;
+        var stage = this.stage = new Konva$1.Stage({
+          container: el,
+          width: width,
+          height: height
+        });
+        var main = this.layers.main = new Konva$1.Layer();
+        stage.add(main);
+        var maLine = this.layers.maLine = new Konva$1.Layer();
+        stage.add(maLine);
+        var tickLabel = this.layers.tickLabel = new Konva$1.Layer();
+        stage.add(tickLabel);
+        var mouseLine = this.layers.mouseLine = new Konva$1.Layer();
+        stage.add(mouseLine);
+        stage.container().style.position = 'relative';
+      }
+    }, {
       key: "_initElements",
       value: function _initElements() {
         var options = this.$options;
@@ -1393,28 +1415,6 @@
           $selList.append($selItem);
         });
         return $selList;
-      }
-    }, {
-      key: "_initStage",
-      value: function _initStage() {
-        var _this$$options = this.$options,
-            el = _this$$options.el,
-            width = _this$$options.width,
-            height = _this$$options.height;
-        var stage = this.stage = new Konva$1.Stage({
-          container: el,
-          width: width,
-          height: height
-        });
-        var main = this.layers.main = new Konva$1.Layer();
-        stage.add(main);
-        var maLine = this.layers.maLine = new Konva$1.Layer();
-        stage.add(maLine);
-        var tickLabel = this.layers.tickLabel = new Konva$1.Layer();
-        stage.add(tickLabel);
-        var mouseLine = this.layers.mouseLine = new Konva$1.Layer();
-        stage.add(mouseLine);
-        stage.container().style.position = 'relative';
       }
     }, {
       key: "_bindEvents",
@@ -1793,6 +1793,8 @@
 
       _this._initStage();
 
+      _this._initElements();
+
       _this.mouseLine = new MouseLine(_assertThisInitialized(_this), options);
 
       _this._bindEvents();
@@ -1809,12 +1811,6 @@
     }
 
     _createClass(Volume, [{
-      key: "_initElements",
-      value: function _initElements() {
-        var options = this.$options;
-        var $el = this.$elements.$el = $(options.el);
-      }
-    }, {
       key: "_initStage",
       value: function _initStage() {
         var _this$$options = this.$options,
@@ -1835,6 +1831,12 @@
         var mouseLine = this.layers.mouseLine = new Konva$1.Layer();
         stage.add(mouseLine);
         stage.container().style.position = 'relative';
+      }
+    }, {
+      key: "_initElements",
+      value: function _initElements() {
+        var options = this.$options;
+        var $el = this.$elements.$el = $(options.el);
       }
     }, {
       key: "_bindEvents",

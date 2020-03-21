@@ -70,8 +70,6 @@ class Chart extends EventEmitter {
         this.groups = {}
 
         this._initOptions()
-        
-        this._initElements()
     }
 
     setOptions(key, val) {
@@ -113,9 +111,9 @@ class Chart extends EventEmitter {
         })
     }
 
-    _initElements() {}
-
     _initStage() {}
+
+    _initElements() {}
 
     _bindEvents() {
         var self = this

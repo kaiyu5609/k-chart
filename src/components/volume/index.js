@@ -28,6 +28,8 @@ class Volume extends Chart {
 
         this._initStage()
 
+        this._initElements()
+
         this.mouseLine = new MouseLine(this, options)
 
         this._bindEvents()
@@ -41,11 +43,6 @@ class Volume extends Chart {
         }
     }
 
-    _initElements() {
-        var options = this.$options
-        var $el = this.$elements.$el = $(options.el)
-    }
-    
     _initStage() {
         var { el, width, height } = this.$options
 
@@ -68,6 +65,11 @@ class Volume extends Chart {
         stage.add(mouseLine)
 
         stage.container().style.position = 'relative'
+    }
+
+    _initElements() {
+        var options = this.$options
+        var $el = this.$elements.$el = $(options.el)
     }
 
     _bindEvents() {
