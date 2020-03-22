@@ -9,6 +9,8 @@
 
 特色（推广的一些亮点）
 
+![Alt text](kline.png)
+
 ## 安装依赖
 ```js
 npm install
