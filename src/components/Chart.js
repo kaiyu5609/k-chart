@@ -180,9 +180,9 @@ class Chart extends EventEmitter {
                     self.moveChart(index)
                 }
 
-                if (Math.abs(e.deltaY) < 5 || Math.abs(e.deltaY) > 20) {
+                // if (Math.abs(e.deltaY) < 5 || Math.abs(e.deltaY) > 20) {
                     self.scaleChart(-Math.sign(e.deltaY))
-                }
+                // }
             }
         }
 

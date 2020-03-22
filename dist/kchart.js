@@ -735,11 +735,10 @@
             if (e.deltaX) {
               var index = Math.round(e.deltaX / (kwidth + 2 * kpadding));
               self.moveChart(index);
-            }
+            } // if (Math.abs(e.deltaY) < 5 || Math.abs(e.deltaY) > 20) {
 
-            if (Math.abs(e.deltaY) < 5 || Math.abs(e.deltaY) > 20) {
-              self.scaleChart(-Math.sign(e.deltaY));
-            }
+
+            self.scaleChart(-Math.sign(e.deltaY)); // }
           }
         }
 
@@ -2430,15 +2429,12 @@
         xTextLeft = Math.max(0, xTextLeft);
         xTextLeft = Math.min(figureWidth - xTextWidth, xTextLeft);
 
-        if (xData[mouseIndex] > figureWidth - 150) {
+        if (xData[mouseIndex] > figureWidth - 150 || this._item.left === null && this._item.right === null) {
           item.left = left ? left : 30;
           item.right = null;
         } else if (xData[mouseIndex] < 150 + 30) {
           item.left = null;
           item.right = 0;
-        } else {
-          item.left = this._item.left || (left ? left : 30);
-          item.right = this._item.right;
         }
 
         this._item.left = item.left;

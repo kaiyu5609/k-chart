@@ -106,15 +106,15 @@ class MouseLineDataSet extends DataSet {
         xTextLeft = Math.max(0, xTextLeft)
         xTextLeft = Math.min(figureWidth - xTextWidth, xTextLeft)
 
-        if (xData[mouseIndex] > (figureWidth - 150)) {
+        if (
+            xData[mouseIndex] > (figureWidth - 150) || 
+            (this._item.left === null && this._item.right === null)
+        ) {
             item.left = left ? left : 30
             item.right = null
         } else if (xData[mouseIndex] < 150 + 30) {
             item.left = null
             item.right = 0
-        } else {
-            item.left = this._item.left || (left ? left : 30)
-            item.right = this._item.right
         }
         
         this._item.left = item.left
