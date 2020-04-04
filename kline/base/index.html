@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kline example</title>
+    <style>
+        div.wrapper {
+            position: relative;
+            margin: 45px auto;
+            width: 640px;
+        }
+    </style>
+  </head>
+  <body>
+
+    <div class="wrapper">
+        <div class="toolbar" style="display: none;">
+            <span id="zoom-back" class="btn">=</span>
+            <span id="zoom-out" class="btn">+</span>
+            <span id="zoom-on" class="btn">-</span>
+            <span id="walk-left" class="btn"><</span>
+            <span id="walk-right" class="btn">></span>
+            <span id="slice-type" class="btn">!</span>
+        </div>
+        <div id="chart"></div>
+        <div id="volume"></div>
+    </div>
+
+    <script src="../../lib/jquery/jquery.js"></script>
+    <script src="../../lib/d3/d3.js"></script>
+    <script src="../../lib/konva/konva.js"></script>
+    <script src="../../lib/moment/moment.js"></script>
+    <script src="../../__build__/kchart.js"></script>
+    <script src="../../__build__/kline-base.js"></script>
+  </body>
+</html>
