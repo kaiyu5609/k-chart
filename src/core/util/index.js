@@ -99,3 +99,15 @@ export function isDifPeriod(timestamp, timestamp0, period) {
 
     return false
 }
+
+export function getDis(point1, point2) {
+    var x = point2.pageX - point1.pageX
+    var y = point2.pageY - point1.pageY
+    return Math.sqrt(x * x + y * y)
+}
+
+export function getPinchDis(touches1, touches2) {
+    var dis1 = getDis(touches1[0], touches1[1])
+    var dis2 = getDis(touches2[0], touches2[1])
+    return dis2 - dis1
+}

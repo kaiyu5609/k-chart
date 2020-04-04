@@ -39,11 +39,17 @@ class Chart extends EventEmitter {
         this.dataSet = options.dataSet || {}
 
         this.$colors = {
-            'ma5': '#f80',
-            'ma10': '#08c',
-            'ma20': '#d3a',
-            'ma30': '#f45',
-            'ma60': '#608',
+            // 'ma5': '#f80',
+            // 'ma10': '#08c',
+            // 'ma20': '#d3a',
+            // 'ma30': '#f45',
+            // 'ma60': '#608',
+
+            'ma5': 'rgba(255, 136, 0, 0.8)',
+            'ma10': 'rgba(0, 136, 204, 0.8)',
+            'ma20': 'rgba(221, 51, 170, 0.8)',
+            'ma30': 'rgba(255, 68, 85, 0.8)',
+            'ma60': 'rgba(102, 0, 136, 0.8)',
 
             'ma5_o': 'rgba(255, 136, 0, 0.2)',
             'ma10_o': 'rgba(0, 136, 204, 0.2)',
@@ -51,8 +57,10 @@ class Chart extends EventEmitter {
             'ma30_o': 'rgba(255, 68, 85, 0.2)',
             'ma60_o': 'rgba(102, 0, 136, 0.2)',
 
-            'red': '#e30',
-            'green': '#0a0',
+            // 'red': '#e30',
+            // 'green': '#0a0',
+            'red': '#e24e3c',
+            'green': '#51a169',
             'blue': '#06c',
 
             'close': '#06c',
@@ -139,19 +147,74 @@ class Chart extends EventEmitter {
         })
 
         function startHandler(e) {
+            var touches = e.evt.touches, xData = self.dataSet.getData('xData')
+
             switch (e.type) {
                 case 'touchstart':
                     self._mouseX = self.stage.getPointerPosition().x - left
+                    self._mouseY = self.stage.getPointerPosition().y
+
+                    if (touches && touches.length == 2) {
+                        self._isPinch = true
+                        self._touches = touches
+                    }
+
+                    self._longTouchtimer = setTimeout(() => {
+                        if (self._isPinch) {
+                            return
+                        }
+                        
+                        self._isDrag = false
+
+                        self.mouseIndex = xData.findIndex(v => {
+                            // return v >= x
+                            return (v + kwidth) >= self._mouseX
+                        })
+
+                        self.addMouseLine({ 
+                            emitter: 'self',
+                            type: true,
+                            mouseIndex: self.mouseIndex,
+                            mouseX: self._mouseX,
+                            mouseY: self._mouseY,
+                            isDrag: false,
+                            isLongTouch: true
+                        })
+
+                        self.emit('add-mouse-line', {
+                            emitter: 'other',
+                            type: true,
+                            mouseIndex: self.mouseIndex,
+                            mouseX: self._mouseX,
+                            mouseY: self._mouseY,
+                            isDrag: false,
+                            isLongTouch: true
+                        })
+                    }, 300)
+
                     break
                 case 'mousedown':
                     self._mouseX = e.evt.offsetX - left
+                    self._isDrag = true
                     break
             }
-            self._isDrag = true
         }
 
         function endHandler(e) {
-            self._isDrag = false
+            switch (e.type) {
+                case 'touchend':
+                    self._isDrag = true
+                    self.removeMouseLine()
+                    self.emit('remove-mouse-line')
+                    break
+                case 'mouseup':
+                    self._isDrag = false
+                    break
+            }
+
+            self._isPinch = false
+
+            self._longTouchtimer && clearTimeout(self._longTouchtimer)
         }
 
         function leaveHandler(e) {
@@ -344,7 +407,23 @@ class Chart extends EventEmitter {
         this.moveChart(index)
 
         // 左移（<）、右移（>）时，触发 `mouseline`
-        this.addMouseLine({ type: false })
+        this.addMouseLine({ 
+            emitter: this,
+            type: false,
+            mouseIndex: this.mouseIndex,
+            mouseX: this._mouseX,
+            mouseY: this._mouseY,
+            isDrag: this._isDrag
+        })
+
+        this.emit('add-mouse-line', {
+            emitter: 'other',
+            type: false,
+            mouseIndex: this.mouseIndex,
+            mouseX: this._mouseX,
+            mouseY: this._mouseY,
+            isDrag: this._isDrag
+        })
 
         return this
     }

@@ -21,10 +21,10 @@ class MouseLine extends EventEmitter {
      *  type: true，yMouseLine 跟随鼠标自由移动
      *  type: false，yMouseLine 指示到`currentIndex`对应的收盘价位置
      */
-    addMouseLine(data) {
+    addMouseLine(options) {
         const context = this.context
         const { ctype, width, height, left, figureWidth, figureHeight, stateHeight, period, xAxis, tooltips } = this.$options
-        const { type, mouseIndex, isValidPoint, mouseX, mouseY, isDrag, emitter } = data
+        const { type, mouseIndex, isValidPoint, mouseX, mouseY, isDrag, emitter, isLongTouch } = options
 
         var data = {
             lines: [],
@@ -37,7 +37,8 @@ class MouseLine extends EventEmitter {
         if (
             type === false || 
             mouseIndex >= 0 && !isDrag &&
-            isValidPoint
+            isValidPoint ||
+            isLongTouch
         ) {
             data = this.dataSet.getMouseLineData({
                 ctype,
@@ -81,10 +82,12 @@ class MouseLine extends EventEmitter {
             this.groups.main.add(node)
         })
 
-        data.circles.forEach(opts => {
-            var node = new Konva.Circle(opts)
-            this.groups.main.add(node)
-        })
+        if (emitter !== 'other') {
+            data.circles.forEach(opts => {
+                var node = new Konva.Circle(opts)
+                this.groups.main.add(node)
+            })
+        }
 
         data.rects.forEach(opts => {
             var node = new Konva.Rect(opts)

@@ -2,6 +2,7 @@ import Chart from '../Chart'
 import Konva from 'konva'
 import $ from 'jquery'
 import MouseLine from '../mouse-line/index'
+import { getPinchDis } from '../../core/util'
 
 var uid = 0
 
@@ -88,10 +89,13 @@ class Volume extends Chart {
 
             var x, y, xData = self.dataSet.getData('xData'), isValidPoint
 
+            var touches = e.evt.touches, pinchDis
+
             switch (e.type) {
                 case 'touchmove':
                     x = self.stage.getPointerPosition().x - left
                     y = self.stage.getPointerPosition().y
+                    self._longTouchtimer && clearTimeout(self._longTouchtimer)
                     break
                 case 'mousemove':
                     x = e.evt.offsetX - left
@@ -109,6 +113,11 @@ class Volume extends Chart {
                 if (x >= 0) {
                     self.moveChart(index)
                 }
+            }
+
+            if (self._isPinch && touches && touches.length == 2) {
+                pinchDis = getPinchDis(self._touches, touches)
+                self.scaleChart(Math.sign(pinchDis))
             }
             
             self.mouseIndex = xData.findIndex(v => {
