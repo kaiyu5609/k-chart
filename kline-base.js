@@ -113,7 +113,7 @@
 /******/
 /******/ 	var hotApplyOnUpdate = true;
 /******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "d2e77af80debd82ebffc";
+/******/ 	var hotCurrentHash = "6a63a0dbc07e6dc9f266";
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule;
@@ -870,42 +870,42 @@
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = d3;
+  module.exports = d3;
 
-/***/ }),
-
-/***/ "jquery":
-/*!*************************!*\
-  !*** external "jQuery" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = jQuery;
-
-/***/ }),
-
-/***/ "konva":
-/*!************************!*\
-  !*** external "Konva" ***!
-  \************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = Konva;
-
-/***/ }),
-
-/***/ "moment":
-/*!*************************!*\
-  !*** external "moment" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = moment;
-
-/***/ })
-
-/******/ });
-//# sourceMappingURL=kline-base.js.map
+  /***/ }),
+  
+  /***/ "jquery":
+  /*!*************************!*\
+    !*** external "jQuery" ***!
+    \*************************/
+  /*! no static exports found */
+  /***/ (function(module, exports) {
+  
+  module.exports = jQuery;
+  
+  /***/ }),
+  
+  /***/ "konva":
+  /*!************************!*\
+    !*** external "Konva" ***!
+    \************************/
+  /*! no static exports found */
+  /***/ (function(module, exports) {
+  
+  module.exports = Konva;
+  
+  /***/ }),
+  
+  /***/ "moment":
+  /*!*************************!*\
+    !*** external "moment" ***!
+    \*************************/
+  /*! no static exports found */
+  /***/ (function(module, exports) {
+  
+  module.exports = moment;
+  
+  /***/ })
+  
+  /******/ });
+  //# sourceMappingURL=kline-base.js.map
