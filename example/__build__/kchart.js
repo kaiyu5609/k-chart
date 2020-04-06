@@ -730,45 +730,48 @@ if(true) {
 
           switch (e.type) {
             case 'touchstart':
+              self._isDrag = true;
               self._mouseX = self.stage.getPointerPosition().x - left;
               self._mouseY = self.stage.getPointerPosition().y;
-              self._isDrag = true;
 
               if (touches && touches.length == 2) {
-                self._isPinch = true;
-                self._isDrag = false;
-                self._touches = touches;
-              }
-
-              self._longTouchtimer = setTimeout(function () {
-                if (self._isPinch) {
-                  return;
+                if (!self._isDragging) {
+                  // 当单指moveChart变成双指moveChart时，仍然算是moveChart，而不是scaleChart
+                  self._isDrag = false;
                 }
 
-                self._isDrag = false;
-                self.mouseIndex = xData.findIndex(function (v) {
-                  // return v >= x
-                  return v + kwidth >= self._mouseX;
-                });
-                self.addMouseLine({
-                  emitter: 'self',
-                  type: true,
-                  mouseIndex: self.mouseIndex,
-                  mouseX: self._mouseX,
-                  mouseY: self._mouseY,
-                  isDrag: false,
-                  isLongTouch: true
-                });
-                self.emit('add-mouse-line', {
-                  emitter: 'other',
-                  type: true,
-                  mouseIndex: self.mouseIndex,
-                  mouseX: self._mouseX,
-                  mouseY: self._mouseY,
-                  isDrag: false,
-                  isLongTouch: true
-                });
-              }, 300);
+                self._isPinch = true;
+                self._isLongTouch = false;
+                self._touches = touches;
+              } else {
+                self._longTouchtimer = setTimeout(function () {
+                  self._isLongTouch = true;
+                  self._isDrag = false;
+                  self.mouseIndex = xData.findIndex(function (v) {
+                    // return v >= x
+                    return v + kwidth >= self._mouseX;
+                  });
+                  self.addMouseLine({
+                    emitter: 'self',
+                    type: true,
+                    mouseIndex: self.mouseIndex,
+                    mouseX: self._mouseX,
+                    mouseY: self._mouseY,
+                    isDrag: false,
+                    isLongTouch: true
+                  });
+                  self.emit('add-mouse-line', {
+                    emitter: 'other',
+                    type: true,
+                    mouseIndex: self.mouseIndex,
+                    mouseX: self._mouseX,
+                    mouseY: self._mouseY,
+                    isDrag: false,
+                    isLongTouch: true
+                  });
+                }, 300);
+              }
+
               break;
 
             case 'mousedown':
@@ -779,20 +782,35 @@ if(true) {
         }
 
         function endHandler(e) {
+          var touches = e.evt.touches;
+
           switch (e.type) {
             case 'touchend':
-              setTimeout(function () {
-                self.removeMouseLine();
-                self.emit('remove-mouse-line');
-              }, 300);
+              if (touches && touches.length == 0) {
+                self._isDrag = false;
+                self._isDragging = false;
+              }
+
+              if (self._isLongTouch) {
+                self._isLongTouch = false;
+                setTimeout(function () {
+                  self.removeMouseLine();
+                  self.emit('remove-mouse-line');
+                }, 300);
+              }
+
               break;
 
             case 'mouseup':
+              self._isDrag = false;
+              self._isDragging = false;
               break;
-          }
+          } // 当touchend之后，touchmove还会执行，所以这里延迟将_isPinch设置为false
 
-          self._isDrag = false;
-          self._isPinch = false;
+
+          setTimeout(function () {
+            self._isPinch = false;
+          }, 100);
           self._longTouchtimer && clearTimeout(self._longTouchtimer);
         }
 
@@ -1104,6 +1122,37 @@ if(true) {
     }, {
       key: "destroy",
       value: function destroy() {// TODO
+      }
+    }, {
+      key: "connect",
+      value: function connect(components) {
+        var _this5 = this;
+
+        if (!Array.isArray(components)) {
+          components = [components];
+        }
+
+        components.forEach(function (component) {
+          _this5.on('move-chart', function (_ref) {
+            var index = _ref.index;
+            component.moveChart(index, {
+              emitter: _this5
+            });
+          }).on('scale-chart', function (_ref2) {
+            var scale = _ref2.scale;
+            component.scaleChart(scale, {
+              emitter: _this5
+            });
+          }).on('reset-scale-chart', function () {
+            component.resetScaleChart({
+              emitter: _this5
+            });
+          }).on('add-mouse-line', function (data) {
+            component.addMouseLine(data);
+          }).on('remove-mouse-line', function () {
+            component.removeMouseLine();
+          });
+        });
       }
     }]);
 
@@ -1623,23 +1672,11 @@ if(true) {
               y = e.evt.offsetY;
               break;
           }
-          /**
-           * `hank`
-           * 鼠标在右上工具栏内，不计算如 move 的范围
-           */
-          // if (x > (figureWidth - 150) && y < stateHeight) {
-
 
           if (y < stateHeight || y > figureHeight) {
             self.removeMouseLine();
             self.emit('remove-mouse-line');
             return;
-          }
-
-          if (self._isPinch && touches && touches.length == 2) {
-            self._isDrag = false;
-            pinchDis = getPinchDis(self._touches, touches);
-            self.scaleChart(Math.sign(pinchDis));
           }
 
           if (self._isDrag) {
@@ -1651,13 +1688,18 @@ if(true) {
 
             if (x >= 0) {
               self.moveChart(index * 2);
+              self._isDragging = true;
             }
+          } else if (self._isPinch && touches && touches.length == 2) {
+            pinchDis = getPinchDis(self._touches, touches);
+            self.scaleChart(Math.sign(pinchDis));
           }
 
           self.mouseIndex = xData.findIndex(function (v) {
             // return v >= x
             return v + kwidth >= x;
-          });
+          }); // $('#tips-1').text(self._mouseX + ',' + x + ',' + index + ',' + options.startIndex + ',' + options.stopIndex)
+
           self._mouseX = x;
           self._mouseY = y;
           isValidPoint = self._mouseX >= 0 && self._mouseX <= figureWidth && self._mouseY >= stateHeight && self._mouseY <= figureHeight; // TODO
@@ -1670,7 +1712,8 @@ if(true) {
             mouseX: self._mouseX,
             mouseY: self._mouseY,
             isDrag: self._isDrag,
-            isPinch: self._isPinch
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           }); // TODO
 
           self.emit('add-mouse-line', {
@@ -1681,7 +1724,8 @@ if(true) {
             mouseX: self._mouseX,
             mouseY: self._mouseY,
             isDrag: self._isDrag,
-            isPinch: self._isPinch
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           });
         }
 
@@ -2034,12 +2078,6 @@ if(true) {
             return;
           }
 
-          if (self._isPinch && touches && touches.length == 2) {
-            self._isDrag = false;
-            pinchDis = getPinchDis(self._touches, touches);
-            self.scaleChart(Math.sign(pinchDis));
-          }
-
           if (self._isDrag) {
             if (Math.abs(self._mouseX - x) < kspan) {
               return;
@@ -2049,7 +2087,11 @@ if(true) {
 
             if (x >= 0) {
               self.moveChart(index * 2);
+              self._isDragging = true;
             }
+          } else if (self._isPinch && touches && touches.length == 2) {
+            pinchDis = getPinchDis(self._touches, touches);
+            self.scaleChart(Math.sign(pinchDis));
           }
 
           self.mouseIndex = xData.findIndex(function (v) {
@@ -2068,7 +2110,8 @@ if(true) {
             mouseX: self._mouseX,
             mouseY: self._mouseY,
             isDrag: self._isDrag,
-            isPinch: self._isPinch
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           }); // TODO
 
           self.emit('add-mouse-line', {
@@ -2079,7 +2122,8 @@ if(true) {
             mouseX: self._mouseX,
             mouseY: self._mouseY,
             isDrag: self._isDrag,
-            isPinch: self._isPinch
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           });
         }
 
@@ -5820,48 +5864,8 @@ var volume = new Volume({
   // autoFetchData: false,
   tooltips: false
 });
-kline.on('move-chart', ({
-  index
-}) => {
-  volume.moveChart(index, {
-    emitter: kline
-  });
-}).on('scale-chart', ({
-  scale
-}) => {
-  volume.scaleChart(scale, {
-    emitter: kline
-  });
-}).on('reset-scale-chart', () => {
-  volume.resetScaleChart({
-    emitter: kline
-  });
-}).on('add-mouse-line', data => {
-  volume.addMouseLine(data);
-}).on('remove-mouse-line', () => {
-  volume.removeMouseLine();
-});
-volume.on('move-chart', ({
-  index
-}) => {
-  kline.moveChart(index, {
-    emitter: volume
-  });
-}).on('scale-chart', ({
-  scale
-}) => {
-  kline.scaleChart(scale, {
-    emitter: volume
-  });
-}).on('reset-scale-chart', () => {
-  kline.resetScaleChart({
-    emitter: volume
-  });
-}).on('add-mouse-line', data => {
-  kline.addMouseLine(data);
-}).on('remove-mouse-line', () => {
-  kline.removeMouseLine();
-});
+kline.connect(volume);
+volume.connect(kline);
 console.log('kline', kline);
 console.log('volume', volume); // setTimeout(() => {
 
