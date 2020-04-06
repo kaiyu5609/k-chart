@@ -613,21 +613,29 @@ if(true) {
       _this.allDataSet = options.allDataSet || {};
       _this.dataSet = options.dataSet || {};
       _this.$colors = {
-        'ma5': '#f80',
-        'ma10': '#08c',
-        'ma20': '#d3a',
-        'ma30': '#f45',
-        'ma60': '#608',
+        // 'ma5': '#f80',
+        // 'ma10': '#08c',
+        // 'ma20': '#d3a',
+        // 'ma30': '#f45',
+        // 'ma60': '#608',
+        'ma5': 'rgba(255, 136, 0, 0.8)',
+        'ma10': 'rgba(0, 136, 204, 0.8)',
+        'ma20': 'rgba(221, 51, 170, 0.8)',
+        'ma30': 'rgba(255, 68, 85, 0.8)',
+        'ma60': 'rgba(102, 0, 136, 0.8)',
         'ma5_o': 'rgba(255, 136, 0, 0.2)',
         'ma10_o': 'rgba(0, 136, 204, 0.2)',
         'ma20_o': 'rgba(221, 51, 170, 0.2)',
         'ma30_o': 'rgba(255, 68, 85, 0.2)',
         'ma60_o': 'rgba(102, 0, 136, 0.2)',
-        'red': '#e30',
-        'green': '#0a0',
+        // 'red': '#e30',
+        // 'green': '#0a0',
+        'red': '#e24e3c',
+        'green': '#51a169',
         'blue': '#06c',
         'close': '#06c',
-        'text': '#333'
+        // 'text': '#333'
+        'text': '#43474c'
       };
       _this.mouseIndex = 0;
       _this.currentIndex = 0;
@@ -724,9 +732,11 @@ if(true) {
             case 'touchstart':
               self._mouseX = self.stage.getPointerPosition().x - left;
               self._mouseY = self.stage.getPointerPosition().y;
+              self._isDrag = true;
 
               if (touches && touches.length == 2) {
                 self._isPinch = true;
+                self._isDrag = false;
                 self._touches = touches;
               }
 
@@ -771,16 +781,17 @@ if(true) {
         function endHandler(e) {
           switch (e.type) {
             case 'touchend':
-              self._isDrag = true;
-              self.removeMouseLine();
-              self.emit('remove-mouse-line');
+              setTimeout(function () {
+                self.removeMouseLine();
+                self.emit('remove-mouse-line');
+              }, 300);
               break;
 
             case 'mouseup':
-              self._isDrag = false;
               break;
           }
 
+          self._isDrag = false;
           self._isPinch = false;
           self._longTouchtimer && clearTimeout(self._longTouchtimer);
         }
@@ -958,6 +969,14 @@ if(true) {
           options.startIndex = Math.min(-count, startIndex + index);
           options.stopIndex = Math.min(allKlineData.length, stopIndex + index);
 
+          if (options.startIndex <= -allKlineData.length) {
+            options.startIndex = -allKlineData.length;
+          }
+
+          if (options.stopIndex <= count) {
+            options.stopIndex = count;
+          }
+
           if (options.startIndex + allKlineData.length < count / 2 && index < 0 && !this.allDataSet.getState('isAllData') && (!emitter || emitter === this)) {
             this.fetchData({
               uid: this.uid,
@@ -1053,6 +1072,15 @@ if(true) {
             });
           } else {
             options.startIndex = -options.count - (allKlineData.length - options.stopIndex);
+
+            if (options.startIndex <= -allKlineData.length) {
+              options.startIndex = -allKlineData.length;
+            }
+
+            if (options.stopIndex <= options.count) {
+              options.stopIndex = options.count;
+            }
+
             this.update();
           }
 
@@ -1327,7 +1355,8 @@ if(true) {
             mouseY = options.mouseY,
             isDrag = options.isDrag,
             emitter = options.emitter,
-            isLongTouch = options.isLongTouch;
+            isLongTouch = options.isLongTouch,
+            isPinch = options.isPinch;
         var data = {
           lines: [],
           rects: [],
@@ -1335,7 +1364,7 @@ if(true) {
           circles: []
         }; // TODO
 
-        if (type === false || mouseIndex >= 0 && !isDrag && isValidPoint || isLongTouch) {
+        if (type === false || mouseIndex >= 0 && !isDrag && !isPinch && isValidPoint || isLongTouch) {
           data = this.dataSet.getMouseLineData({
             ctype: ctype,
             type: type,
@@ -1350,7 +1379,7 @@ if(true) {
             xAxis: xAxis,
             emitter: emitter
           });
-          context.currentIndex = context.mouseIndex;
+          context.currentIndex = typeof mouseIndex != null ? mouseIndex : context.mouseIndex;
 
           if (tooltips) {
             this.tooltips.setData(data.item);
@@ -1598,12 +1627,19 @@ if(true) {
            * `hank`
            * 鼠标在右上工具栏内，不计算如 move 的范围
            */
+          // if (x > (figureWidth - 150) && y < stateHeight) {
 
 
-          if (x > figureWidth - 150 && y < stateHeight) {
+          if (y < stateHeight || y > figureHeight) {
             self.removeMouseLine();
             self.emit('remove-mouse-line');
             return;
+          }
+
+          if (self._isPinch && touches && touches.length == 2) {
+            self._isDrag = false;
+            pinchDis = getPinchDis(self._touches, touches);
+            self.scaleChart(Math.sign(pinchDis));
           }
 
           if (self._isDrag) {
@@ -1614,13 +1650,8 @@ if(true) {
             var index = Math.round((self._mouseX - x) / kspan);
 
             if (x >= 0) {
-              self.moveChart(index);
+              self.moveChart(index * 2);
             }
-          }
-
-          if (self._isPinch && touches && touches.length == 2) {
-            pinchDis = getPinchDis(self._touches, touches);
-            self.scaleChart(Math.sign(pinchDis));
           }
 
           self.mouseIndex = xData.findIndex(function (v) {
@@ -1638,7 +1669,8 @@ if(true) {
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch
           }); // TODO
 
           self.emit('add-mouse-line', {
@@ -1648,7 +1680,8 @@ if(true) {
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch
           });
         }
 
@@ -1672,6 +1705,7 @@ if(true) {
         }
 
         this.stage.on('click', clickHandler);
+        this.stage.on('touchstart', clickHandler);
         this.stage.on('mousemove', moveHandler);
         this.stage.on('touchmove', moveHandler);
         this.mouseLine.on('mouseline-move', function () {
@@ -1900,7 +1934,8 @@ if(true) {
         height: 90,
         figureWidth: 640,
         stateHeight: 20,
-        figureHeight: 70
+        figureHeight: 70,
+        maList: ['ma5', 'ma10']
       };
       options = _this.$options = Object.assign(_this.$options, defaults, options);
       _this.uid = 'volume' + uid$1++;
@@ -1993,6 +2028,18 @@ if(true) {
               break;
           }
 
+          if (y < stateHeight || y > figureHeight) {
+            self.removeMouseLine();
+            self.emit('remove-mouse-line');
+            return;
+          }
+
+          if (self._isPinch && touches && touches.length == 2) {
+            self._isDrag = false;
+            pinchDis = getPinchDis(self._touches, touches);
+            self.scaleChart(Math.sign(pinchDis));
+          }
+
           if (self._isDrag) {
             if (Math.abs(self._mouseX - x) < kspan) {
               return;
@@ -2001,13 +2048,8 @@ if(true) {
             var index = Math.round((self._mouseX - x) / kspan);
 
             if (x >= 0) {
-              self.moveChart(index);
+              self.moveChart(index * 2);
             }
-          }
-
-          if (self._isPinch && touches && touches.length == 2) {
-            pinchDis = getPinchDis(self._touches, touches);
-            self.scaleChart(Math.sign(pinchDis));
           }
 
           self.mouseIndex = xData.findIndex(function (v) {
@@ -2025,7 +2067,8 @@ if(true) {
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch
           }); // TODO
 
           self.emit('add-mouse-line', {
@@ -2035,13 +2078,17 @@ if(true) {
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch
           });
         }
 
         this.stage.on('click', clickHandler);
         this.stage.on('mousemove', moveHandler);
         this.stage.on('touchmove', moveHandler);
+        this.mouseLine.on('mouseline-move', function () {
+          self.drawMaLine();
+        });
       }
     }, {
       key: "addVrect",
@@ -2131,18 +2178,71 @@ if(true) {
         return this;
       }
     }, {
+      key: "drawMaLine",
+      value: function drawMaLine() {
+        var _this4 = this;
+
+        var _this$$options5 = this.$options,
+            width = _this$$options5.width,
+            height = _this$$options5.height,
+            left = _this$$options5.left,
+            stateHeight = _this$$options5.stateHeight,
+            figureWidth = _this$$options5.figureWidth,
+            kspan = _this$$options5.kspan,
+            kwidth = _this$$options5.kwidth,
+            maList = _this$$options5.maList,
+            startIndex = _this$$options5.startIndex,
+            stopIndex = _this$$options5.stopIndex;
+
+        if (!this.groups.maline) {
+          this.groups.maline = new Konva$1.Group({
+            x: 0,
+            y: 0,
+            width: width,
+            height: height
+          });
+        } else {
+          this.groups.maline.destroy();
+        }
+
+        var data = this.dataSet.getMaLineData({
+          left: left,
+          stateHeight: stateHeight,
+          figureWidth: figureWidth,
+          kspan: kspan,
+          kwidth: kwidth,
+          maList: maList,
+          startIndex: startIndex,
+          stopIndex: stopIndex,
+          currentIndex: this.currentIndex,
+          $colors: this.$colors
+        });
+        data.lines.forEach(function (opts) {
+          var node = new Konva$1.Line(opts);
+
+          _this4.groups.maline.add(node);
+        });
+        data.texts.forEach(function (opts) {
+          var node = new Konva$1.Text(opts);
+
+          _this4.groups.maline.add(node);
+        });
+        this.layers.maLine.add(this.groups.maline).draw();
+        return this;
+      }
+    }, {
       key: "setScale",
       value: function setScale() {
-        var _this$$options5 = this.$options,
-            maList = _this$$options5.maList,
-            kwidth = _this$$options5.kwidth,
-            startIndex = _this$$options5.startIndex,
-            stopIndex = _this$$options5.stopIndex,
-            figureHeight = _this$$options5.figureHeight,
-            stateHeight = _this$$options5.stateHeight,
-            paddingY = _this$$options5.paddingY,
-            width = _this$$options5.width,
-            height = _this$$options5.height; // console.log(startIndex, stopIndex)
+        var _this$$options6 = this.$options,
+            maList = _this$$options6.maList,
+            kwidth = _this$$options6.kwidth,
+            startIndex = _this$$options6.startIndex,
+            stopIndex = _this$$options6.stopIndex,
+            figureHeight = _this$$options6.figureHeight,
+            stateHeight = _this$$options6.stateHeight,
+            paddingY = _this$$options6.paddingY,
+            width = _this$$options6.width,
+            height = _this$$options6.height; // console.log(startIndex, stopIndex)
 
         var data = this.allDataSet.slice(startIndex, stopIndex);
         this.dataSet.setData(data);
@@ -2159,7 +2259,7 @@ if(true) {
       key: "update",
       value: function update() {
         this.setScale();
-        this.drawVolume().drawTickLabel();
+        this.drawVolume().drawMaLine().drawTickLabel();
       }
     }, {
       key: "redraw",
@@ -2214,6 +2314,22 @@ if(true) {
 
         var num = val;
         num = [11, 12, 13, 14, 15, 17, 60, 61, 81].indexOf(+quoteType) > -1 ? ''.concat(parseVolume(val / quoteLotSize)) : [30, 31, 32, 33, 34, 0, 3, 4, 5, 6, 7, 26, 27, 28, 8, 35].indexOf(+quoteType) > -1 ? ''.concat(parseVolume(val), '股') : parseVolume(val);
+        return flag ? num : parseFloat(num);
+      }
+    }, {
+      key: "parseAmount",
+      value: function parseAmount$1() {
+        var val = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+        var quoteLotSize = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
+        var quoteType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 11;
+        var flag = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
+        if (null === val) {
+          return '--';
+        }
+
+        var num = val;
+        num = [11, 12, 13, 14, 15, 17, 60, 61, 81].indexOf(+quoteType) > -1 ? ''.concat(parseAmount(val / quoteLotSize)) : parseAmount(val);
         return flag ? num : parseFloat(num);
       }
     }]);
@@ -3253,6 +3369,83 @@ if(true) {
         });
       }
     }, {
+      key: "getMaLineData",
+      value: function getMaLineData(options) {
+        var _this3 = this;
+
+        var result = {
+          lines: [],
+          texts: []
+        };
+        var data = this.getData();
+
+        if (!data.length) {
+          return result;
+        }
+
+        var columns = this.options.columns;
+        var left = options.left,
+            maList = options.maList,
+            kspan = options.kspan,
+            kwidth = options.kwidth,
+            stateHeight = options.stateHeight,
+            figureWidth = options.figureWidth,
+            figureHeight = options.figureHeight,
+            startIndex = options.startIndex,
+            stopIndex = options.stopIndex,
+            sliceType = options.sliceType,
+            period = options.period,
+            $colors = options.$colors,
+            xAxis = options.xAxis,
+            currentIndex = options.currentIndex;
+        var scaleLinear = this.getScale();
+        var volume = typeof data[currentIndex] !== 'undefined' ? this.parseVolume(data[currentIndex][columns.indexOf('volume')]) + '手' : '-手';
+        var volumeStateText = '成交量 ' + volume;
+        var volumeStateTextWidth = measureText(volumeStateText).width;
+        var volumeStateTextLeft = volumeStateTextWidth + 5;
+        result.texts.push({
+          x: left,
+          y: floor((stateHeight - 10) / 2),
+          text: volumeStateText,
+          fill: $colors.text,
+          fontSize: 11,
+          align: 'left',
+          verticalAlign: 'middle'
+        });
+        maList.forEach(function (maItem) {
+          var maDays = Number(maItem.replace(/[^\d]/g, '')); // `注意`：需要从所有的成交量中计算均线
+
+          var allVolumeData = ma(_this3.allDataSet.getData('volumeData'), maDays);
+          var volumeData = allVolumeData.slice(startIndex, stopIndex);
+          var maKeyVal = maItem.toLocaleUpperCase() + ':' + (typeof volumeData[currentIndex] !== 'undefined' ? _this3.parseVolume(volumeData[currentIndex]) + '手' : '-手');
+          var maKeyValWidth = measureText(maKeyVal).width;
+          var lineOpts = {
+            ma: maDays,
+            stroke: $colors[maItem],
+            strokeWidth: 1,
+            points: []
+          };
+          volumeData.forEach(function (d, i) {
+            if (scaleLinear(d)) {
+              lineOpts.points.push(left + i * kspan + kwidth / 2, scaleLinear(d), left + i * kspan + kwidth / 2, scaleLinear(d));
+            }
+          });
+          result.lines.push(lineOpts);
+          var textOpts = {
+            x: left + volumeStateTextLeft,
+            y: floor((stateHeight - 10) / 2),
+            text: maKeyVal,
+            fill: $colors[maItem],
+            fontSize: 11,
+            align: 'left',
+            verticalAlign: 'middle'
+          };
+          result.texts.push(textOpts);
+          volumeStateTextLeft += maKeyValWidth + 5;
+        });
+        return result;
+      }
+    }, {
       key: "getYTickData",
       value: function getYTickData(options) {
         var result = {
@@ -3270,8 +3463,9 @@ if(true) {
             $colors = options.$colors;
         var extent = this.getData('extent');
         var span = (figureHeight - stateHeight) / 2; // 最高刻度值
+        // debugger
 
-        var text = this.parseVolume(extent.max);
+        var text = this.parseAmount(extent.max);
         var xText = left ? left - measureText(text).width - 2 : 1;
         result.texts.push({
           x: xText,
@@ -3285,7 +3479,7 @@ if(true) {
 
         for (var i = 1; i < 2; i++) {
           text = extent.max - span * i / (figureHeight - stateHeight) * (extent.max - extent.min);
-          text = this.parseVolume(text);
+          text = this.parseAmount(text);
           xText = left ? left - measureText(text).width - 2 : 1;
           result.texts.push({
             x: xText,
@@ -3550,7 +3744,7 @@ module.exports = function () {
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../node_modules/css-loader/dist/runtime/api.js */ "../node_modules/css-loader/dist/runtime/api.js");
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "html, body, ul {\n  margin: 0;\n  padding: 0; }\n\n.toolbar {\n  position: absolute;\n  top: 2px;\n  right: 0;\n  z-index: 999; }\n\n.toolbar span {\n  float: left;\n  margin-left: 5px;\n  width: 20px;\n  height: 16px;\n  font-size: 12px;\n  cursor: pointer;\n  color: #555;\n  background-color: #eee;\n  text-align: center;\n  line-height: 16px;\n  border-radius: 20%;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n   -ms-user-select: none;\n       user-select: none; }\n\n.toolbar span:hover {\n  color: #06c;\n  background-color: #e2f8ff; }\n\n#k-tooltips {\n  width: 132px; }\n\n#k-tooltips ul {\n  list-style: none;\n  width: 120px;\n  background: rgba(255, 255, 255, 0.9);\n  border: 1px solid rgba(218, 222, 229, 0.6);\n  font-size: 12px;\n  line-height: 18px;\n  padding: 5px;\n  margin: 0; }\n\n#k-tooltips ul li {\n  list-style: none; }\n\n#k-tooltips ul li span {\n  text-align: left; }\n\n#k-tooltips ul li span:last-child {\n  float: right; }\n\n.sel-list {\n  display: none;\n  list-style: none;\n  position: absolute;\n  top: 21px;\n  left: -20px;\n  line-height: 26px;\n  width: 70px;\n  box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.4);\n  background: #fff;\n  text-align: center;\n  z-index: 222;\n  font-size: 12px;\n  cursor: pointer; }\n\n.sel-list li.active {\n  color: #06c; }\n", ""]);
+exports.push([module.i, "html, body, ul {\n  margin: 0;\n  padding: 0; }\n\n.toolbar {\n  position: absolute;\n  top: 2px;\n  right: 0;\n  z-index: 999; }\n\n.toolbar span {\n  float: left;\n  margin-left: 5px;\n  width: 20px;\n  height: 16px;\n  font-size: 12px;\n  cursor: pointer;\n  color: #555;\n  background-color: #eee;\n  text-align: center;\n  line-height: 16px;\n  border-radius: 20%;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n   -ms-user-select: none;\n       user-select: none; }\n\n.toolbar span:hover {\n  color: #06c;\n  background-color: #e2f8ff; }\n\n#k-tooltips {\n  width: 132px; }\n\n#k-tooltips ul {\n  list-style: none;\n  width: 120px;\n  background: rgba(255, 255, 255, 0.9);\n  border: 1px solid rgba(218, 222, 229, 0.6);\n  font-size: 12px;\n  line-height: 18px;\n  padding: 5px;\n  margin: 0; }\n\n#k-tooltips ul li {\n  list-style: none; }\n\n#k-tooltips ul li span {\n  text-align: left;\n  color: #43474c; }\n\n#k-tooltips ul li span:last-child {\n  float: right; }\n\n.sel-list {\n  display: none;\n  list-style: none;\n  position: absolute;\n  top: 21px;\n  left: -20px;\n  line-height: 26px;\n  width: 70px;\n  box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.4);\n  background: #fff;\n  text-align: center;\n  z-index: 222;\n  font-size: 12px;\n  cursor: pointer; }\n\n.sel-list li.active {\n  color: #06c; }\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -5721,10 +5915,10 @@ pressBtn($btnWalkRight, function () {
 
 function pressBtn(el, callback) {
   var timer = 0;
-  el.on('mousedown', function () {
+  el.on('mousedown touchstart', function () {
     timer = setInterval(callback, 200);
   });
-  el.on('mouseup', function () {
+  el.on('mouseup touchend', function () {
     clearInterval(timer);
   });
 }

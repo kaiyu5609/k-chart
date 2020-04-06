@@ -2,7 +2,9 @@ import d3 from 'd3'
 import moment from 'moment'
 import { 
     floor, 
-    measureText 
+    measureText,
+    ma,
+    parseAmount
 } from '../core/util/index'
 import KlineVolumeDataSet from './KlineVolumeDataSet'
 import MouseLineDataSet from './MouseLineDataSet'
@@ -104,6 +106,105 @@ class VolumeDataSet extends KlineVolumeDataSet {
         })
     }
 
+    getMaLineData(options) {
+        var result = {
+            lines: [],
+            texts: []
+        }
+
+        var data = this.getData()
+        
+        if (!data.length) {
+            return result
+        }
+
+        var columns = this.options.columns
+
+        var { 
+            left, 
+            maList, 
+            kspan, 
+            kwidth, 
+            stateHeight, 
+            figureWidth, 
+            figureHeight, 
+
+            startIndex,
+            stopIndex,
+
+            sliceType, 
+            period, 
+            $colors, 
+            xAxis, 
+            currentIndex
+        } = options
+
+        var scaleLinear = this.getScale()
+
+        var volume = typeof data[currentIndex] !== 'undefined'
+            ? this.parseVolume(data[currentIndex][columns.indexOf('volume')]) + '手'
+            : '-手'
+
+        var volumeStateText = '成交量 ' + volume
+        var volumeStateTextWidth = measureText(volumeStateText).width
+        var volumeStateTextLeft = volumeStateTextWidth + 5
+
+        result.texts.push({
+            x: left,
+            y: floor((stateHeight - 10) / 2),
+            text: volumeStateText,
+            fill: $colors.text,
+            fontSize: 11,
+            align: 'left',
+            verticalAlign: 'middle'
+        })
+
+        maList.forEach((maItem) => {
+            var maDays = Number(maItem.replace(/[^\d]/g, ''))
+
+            // `注意`：需要从所有的成交量中计算均线
+            var allVolumeData = ma(this.allDataSet.getData('volumeData'), maDays)
+            var volumeData = allVolumeData.slice(startIndex, stopIndex)
+
+            var maKeyVal = maItem.toLocaleUpperCase() + ':' + (typeof volumeData[currentIndex] !== 'undefined'
+                ? this.parseVolume(volumeData[currentIndex]) + '手'
+                : '-手')
+            var maKeyValWidth = measureText(maKeyVal).width
+
+            var lineOpts = {
+                ma: maDays,
+                stroke: $colors[maItem],
+                strokeWidth: 1,
+                points: []
+            }
+            volumeData.forEach((d, i) => {
+                if (scaleLinear(d)) {
+                    lineOpts.points.push(
+                        left + i * kspan + kwidth / 2, scaleLinear(d),
+                        left + i * kspan + kwidth / 2, scaleLinear(d)
+                    )
+                }
+            })
+            result.lines.push(lineOpts)
+
+            var textOpts = {
+                x: left + volumeStateTextLeft,
+                y: floor((stateHeight - 10) / 2),
+                text: maKeyVal,
+                fill: $colors[maItem],
+                fontSize: 11,
+                align: 'left',
+                verticalAlign: 'middle'
+            }
+
+            result.texts.push(textOpts)
+
+            volumeStateTextLeft += maKeyValWidth + 5
+        })
+
+        return result
+    }
+
     getYTickData(options) {
         var result = {
             texts: []
@@ -122,7 +223,8 @@ class VolumeDataSet extends KlineVolumeDataSet {
         var span = (figureHeight - stateHeight) / 2
 
         // 最高刻度值
-        var text = this.parseVolume(extent.max)
+        // debugger
+        var text = this.parseAmount(extent.max)
         var xText = left ? left - measureText(text).width - 2 : 1
 
         result.texts.push({
@@ -137,7 +239,7 @@ class VolumeDataSet extends KlineVolumeDataSet {
 
         for (var i = 1; i < 2; i++) {
             text = (extent.max - (span * i) / (figureHeight - stateHeight) * (extent.max - extent.min))
-            text = this.parseVolume(text)
+            text = this.parseAmount(text)
             xText = left ? left - measureText(text).width - 2 : 1
 
             result.texts.push({

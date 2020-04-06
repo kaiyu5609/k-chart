@@ -612,7 +612,8 @@
         'green': '#51a169',
         'blue': '#06c',
         'close': '#06c',
-        'text': '#333'
+        // 'text': '#333'
+        'text': '#43474c'
       };
       _this.mouseIndex = 0;
       _this.currentIndex = 0;
@@ -708,43 +709,48 @@
 
           switch (e.type) {
             case 'touchstart':
+              self._isDrag = true;
               self._mouseX = self.stage.getPointerPosition().x - left;
               self._mouseY = self.stage.getPointerPosition().y;
 
               if (touches && touches.length == 2) {
-                self._isPinch = true;
-                self._touches = touches;
-              }
-
-              self._longTouchtimer = setTimeout(function () {
-                if (self._isPinch) {
-                  return;
+                if (!self._isDragging) {
+                  // 当单指moveChart变成双指moveChart时，仍然算是moveChart，而不是scaleChart
+                  self._isDrag = false;
                 }
 
-                self._isDrag = false;
-                self.mouseIndex = xData.findIndex(function (v) {
-                  // return v >= x
-                  return v + kwidth >= self._mouseX;
-                });
-                self.addMouseLine({
-                  emitter: 'self',
-                  type: true,
-                  mouseIndex: self.mouseIndex,
-                  mouseX: self._mouseX,
-                  mouseY: self._mouseY,
-                  isDrag: false,
-                  isLongTouch: true
-                });
-                self.emit('add-mouse-line', {
-                  emitter: 'other',
-                  type: true,
-                  mouseIndex: self.mouseIndex,
-                  mouseX: self._mouseX,
-                  mouseY: self._mouseY,
-                  isDrag: false,
-                  isLongTouch: true
-                });
-              }, 300);
+                self._isPinch = true;
+                self._isLongTouch = false;
+                self._touches = touches;
+              } else {
+                self._longTouchtimer = setTimeout(function () {
+                  self._isLongTouch = true;
+                  self._isDrag = false;
+                  self.mouseIndex = xData.findIndex(function (v) {
+                    // return v >= x
+                    return v + kwidth >= self._mouseX;
+                  });
+                  self.addMouseLine({
+                    emitter: 'self',
+                    type: true,
+                    mouseIndex: self.mouseIndex,
+                    mouseX: self._mouseX,
+                    mouseY: self._mouseY,
+                    isDrag: false,
+                    isLongTouch: true
+                  });
+                  self.emit('add-mouse-line', {
+                    emitter: 'other',
+                    type: true,
+                    mouseIndex: self.mouseIndex,
+                    mouseX: self._mouseX,
+                    mouseY: self._mouseY,
+                    isDrag: false,
+                    isLongTouch: true
+                  });
+                }, 300);
+              }
+
               break;
 
             case 'mousedown':
@@ -755,19 +761,35 @@
         }
 
         function endHandler(e) {
+          var touches = e.evt.touches;
+
           switch (e.type) {
             case 'touchend':
-              self._isDrag = true;
-              self.removeMouseLine();
-              self.emit('remove-mouse-line');
+              if (touches && touches.length == 0) {
+                self._isDrag = false;
+                self._isDragging = false;
+              }
+
+              if (self._isLongTouch) {
+                self._isLongTouch = false;
+                setTimeout(function () {
+                  self.removeMouseLine();
+                  self.emit('remove-mouse-line');
+                }, 300);
+              }
+
               break;
 
             case 'mouseup':
               self._isDrag = false;
+              self._isDragging = false;
               break;
-          }
+          } // 当touchend之后，touchmove还会执行，所以这里延迟将_isPinch设置为false
 
-          self._isPinch = false;
+
+          setTimeout(function () {
+            self._isPinch = false;
+          }, 100);
           self._longTouchtimer && clearTimeout(self._longTouchtimer);
         }
 
@@ -944,6 +966,14 @@
           options.startIndex = Math.min(-count, startIndex + index);
           options.stopIndex = Math.min(allKlineData.length, stopIndex + index);
 
+          if (options.startIndex <= -allKlineData.length) {
+            options.startIndex = -allKlineData.length;
+          }
+
+          if (options.stopIndex <= count) {
+            options.stopIndex = count;
+          }
+
           if (options.startIndex + allKlineData.length < count / 2 && index < 0 && !this.allDataSet.getState('isAllData') && (!emitter || emitter === this)) {
             this.fetchData({
               uid: this.uid,
@@ -1039,6 +1069,15 @@
             });
           } else {
             options.startIndex = -options.count - (allKlineData.length - options.stopIndex);
+
+            if (options.startIndex <= -allKlineData.length) {
+              options.startIndex = -allKlineData.length;
+            }
+
+            if (options.stopIndex <= options.count) {
+              options.stopIndex = options.count;
+            }
+
             this.update();
           }
 
@@ -1062,6 +1101,37 @@
     }, {
       key: "destroy",
       value: function destroy() {// TODO
+      }
+    }, {
+      key: "connect",
+      value: function connect(components) {
+        var _this5 = this;
+
+        if (!Array.isArray(components)) {
+          components = [components];
+        }
+
+        components.forEach(function (component) {
+          _this5.on('move-chart', function (_ref) {
+            var index = _ref.index;
+            component.moveChart(index, {
+              emitter: _this5
+            });
+          }).on('scale-chart', function (_ref2) {
+            var scale = _ref2.scale;
+            component.scaleChart(scale, {
+              emitter: _this5
+            });
+          }).on('reset-scale-chart', function () {
+            component.resetScaleChart({
+              emitter: _this5
+            });
+          }).on('add-mouse-line', function (data) {
+            component.addMouseLine(data);
+          }).on('remove-mouse-line', function () {
+            component.removeMouseLine();
+          });
+        });
       }
     }]);
 
@@ -1305,7 +1375,8 @@
             mouseY = options.mouseY,
             isDrag = options.isDrag,
             emitter = options.emitter,
-            isLongTouch = options.isLongTouch;
+            isLongTouch = options.isLongTouch,
+            isPinch = options.isPinch;
         var data = {
           lines: [],
           rects: [],
@@ -1313,7 +1384,7 @@
           circles: []
         }; // TODO
 
-        if (type === false || mouseIndex >= 0 && !isDrag && isValidPoint || isLongTouch) {
+        if (type === false || mouseIndex >= 0 && !isDrag && !isPinch && isValidPoint || isLongTouch) {
           data = this.dataSet.getMouseLineData({
             ctype: ctype,
             type: type,
@@ -1328,7 +1399,7 @@
             xAxis: xAxis,
             emitter: emitter
           });
-          context.currentIndex = context.mouseIndex;
+          context.currentIndex = typeof mouseIndex != null ? mouseIndex : context.mouseIndex;
 
           if (tooltips) {
             this.tooltips.setData(data.item);
@@ -1572,13 +1643,8 @@
               y = e.evt.offsetY;
               break;
           }
-          /**
-           * `hank`
-           * 鼠标在右上工具栏内，不计算如 move 的范围
-           */
 
-
-          if (x > figureWidth - 150 && y < stateHeight) {
+          if (y < stateHeight || y > figureHeight) {
             self.removeMouseLine();
             self.emit('remove-mouse-line');
             return;
@@ -1592,11 +1658,10 @@
             var index = Math.round((self._mouseX - x) / kspan);
 
             if (x >= 0) {
-              self.moveChart(index);
+              self.moveChart(index * 2);
+              self._isDragging = true;
             }
-          }
-
-          if (self._isPinch && touches && touches.length == 2) {
+          } else if (self._isPinch && touches && touches.length == 2) {
             pinchDis = getPinchDis(self._touches, touches);
             self.scaleChart(Math.sign(pinchDis));
           }
@@ -1604,7 +1669,8 @@
           self.mouseIndex = xData.findIndex(function (v) {
             // return v >= x
             return v + kwidth >= x;
-          });
+          }); // $('#tips-1').text(self._mouseX + ',' + x + ',' + index + ',' + options.startIndex + ',' + options.stopIndex)
+
           self._mouseX = x;
           self._mouseY = y;
           isValidPoint = self._mouseX >= 0 && self._mouseX <= figureWidth && self._mouseY >= stateHeight && self._mouseY <= figureHeight; // TODO
@@ -1616,7 +1682,9 @@
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           }); // TODO
 
           self.emit('add-mouse-line', {
@@ -1626,7 +1694,9 @@
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           });
         }
 
@@ -1650,6 +1720,7 @@
         }
 
         this.stage.on('click', clickHandler);
+        this.stage.on('touchstart', clickHandler);
         this.stage.on('mousemove', moveHandler);
         this.stage.on('touchmove', moveHandler);
         this.mouseLine.on('mouseline-move', function () {
@@ -1878,7 +1949,8 @@
         height: 90,
         figureWidth: 640,
         stateHeight: 20,
-        figureHeight: 70
+        figureHeight: 70,
+        maList: ['ma5', 'ma10']
       };
       options = _this.$options = Object.assign(_this.$options, defaults, options);
       _this.uid = 'volume' + uid$1++;
@@ -1971,6 +2043,12 @@
               break;
           }
 
+          if (y < stateHeight || y > figureHeight) {
+            self.removeMouseLine();
+            self.emit('remove-mouse-line');
+            return;
+          }
+
           if (self._isDrag) {
             if (Math.abs(self._mouseX - x) < kspan) {
               return;
@@ -1979,11 +2057,10 @@
             var index = Math.round((self._mouseX - x) / kspan);
 
             if (x >= 0) {
-              self.moveChart(index);
+              self.moveChart(index * 2);
+              self._isDragging = true;
             }
-          }
-
-          if (self._isPinch && touches && touches.length == 2) {
+          } else if (self._isPinch && touches && touches.length == 2) {
             pinchDis = getPinchDis(self._touches, touches);
             self.scaleChart(Math.sign(pinchDis));
           }
@@ -2003,7 +2080,9 @@
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           }); // TODO
 
           self.emit('add-mouse-line', {
@@ -2013,13 +2092,18 @@
             isValidPoint: isValidPoint,
             mouseX: self._mouseX,
             mouseY: self._mouseY,
-            isDrag: self._isDrag
+            isDrag: self._isDrag,
+            isPinch: self._isPinch,
+            isLongTouch: self._isLongTouch
           });
         }
 
         this.stage.on('click', clickHandler);
         this.stage.on('mousemove', moveHandler);
         this.stage.on('touchmove', moveHandler);
+        this.mouseLine.on('mouseline-move', function () {
+          self.drawMaLine();
+        });
       }
     }, {
       key: "addVrect",
@@ -2109,18 +2193,71 @@
         return this;
       }
     }, {
+      key: "drawMaLine",
+      value: function drawMaLine() {
+        var _this4 = this;
+
+        var _this$$options5 = this.$options,
+            width = _this$$options5.width,
+            height = _this$$options5.height,
+            left = _this$$options5.left,
+            stateHeight = _this$$options5.stateHeight,
+            figureWidth = _this$$options5.figureWidth,
+            kspan = _this$$options5.kspan,
+            kwidth = _this$$options5.kwidth,
+            maList = _this$$options5.maList,
+            startIndex = _this$$options5.startIndex,
+            stopIndex = _this$$options5.stopIndex;
+
+        if (!this.groups.maline) {
+          this.groups.maline = new Konva$1.Group({
+            x: 0,
+            y: 0,
+            width: width,
+            height: height
+          });
+        } else {
+          this.groups.maline.destroy();
+        }
+
+        var data = this.dataSet.getMaLineData({
+          left: left,
+          stateHeight: stateHeight,
+          figureWidth: figureWidth,
+          kspan: kspan,
+          kwidth: kwidth,
+          maList: maList,
+          startIndex: startIndex,
+          stopIndex: stopIndex,
+          currentIndex: this.currentIndex,
+          $colors: this.$colors
+        });
+        data.lines.forEach(function (opts) {
+          var node = new Konva$1.Line(opts);
+
+          _this4.groups.maline.add(node);
+        });
+        data.texts.forEach(function (opts) {
+          var node = new Konva$1.Text(opts);
+
+          _this4.groups.maline.add(node);
+        });
+        this.layers.maLine.add(this.groups.maline).draw();
+        return this;
+      }
+    }, {
       key: "setScale",
       value: function setScale() {
-        var _this$$options5 = this.$options,
-            maList = _this$$options5.maList,
-            kwidth = _this$$options5.kwidth,
-            startIndex = _this$$options5.startIndex,
-            stopIndex = _this$$options5.stopIndex,
-            figureHeight = _this$$options5.figureHeight,
-            stateHeight = _this$$options5.stateHeight,
-            paddingY = _this$$options5.paddingY,
-            width = _this$$options5.width,
-            height = _this$$options5.height; // console.log(startIndex, stopIndex)
+        var _this$$options6 = this.$options,
+            maList = _this$$options6.maList,
+            kwidth = _this$$options6.kwidth,
+            startIndex = _this$$options6.startIndex,
+            stopIndex = _this$$options6.stopIndex,
+            figureHeight = _this$$options6.figureHeight,
+            stateHeight = _this$$options6.stateHeight,
+            paddingY = _this$$options6.paddingY,
+            width = _this$$options6.width,
+            height = _this$$options6.height; // console.log(startIndex, stopIndex)
 
         var data = this.allDataSet.slice(startIndex, stopIndex);
         this.dataSet.setData(data);
@@ -2137,7 +2274,7 @@
       key: "update",
       value: function update() {
         this.setScale();
-        this.drawVolume().drawTickLabel();
+        this.drawVolume().drawMaLine().drawTickLabel();
       }
     }, {
       key: "redraw",
@@ -2192,6 +2329,22 @@
 
         var num = val;
         num = [11, 12, 13, 14, 15, 17, 60, 61, 81].indexOf(+quoteType) > -1 ? ''.concat(parseVolume(val / quoteLotSize)) : [30, 31, 32, 33, 34, 0, 3, 4, 5, 6, 7, 26, 27, 28, 8, 35].indexOf(+quoteType) > -1 ? ''.concat(parseVolume(val), '股') : parseVolume(val);
+        return flag ? num : parseFloat(num);
+      }
+    }, {
+      key: "parseAmount",
+      value: function parseAmount$1() {
+        var val = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+        var quoteLotSize = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
+        var quoteType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 11;
+        var flag = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
+        if (null === val) {
+          return '--';
+        }
+
+        var num = val;
+        num = [11, 12, 13, 14, 15, 17, 60, 61, 81].indexOf(+quoteType) > -1 ? ''.concat(parseAmount(val / quoteLotSize)) : parseAmount(val);
         return flag ? num : parseFloat(num);
       }
     }]);
@@ -3229,6 +3382,83 @@
         });
       }
     }, {
+      key: "getMaLineData",
+      value: function getMaLineData(options) {
+        var _this3 = this;
+
+        var result = {
+          lines: [],
+          texts: []
+        };
+        var data = this.getData();
+
+        if (!data.length) {
+          return result;
+        }
+
+        var columns = this.options.columns;
+        var left = options.left,
+            maList = options.maList,
+            kspan = options.kspan,
+            kwidth = options.kwidth,
+            stateHeight = options.stateHeight,
+            figureWidth = options.figureWidth,
+            figureHeight = options.figureHeight,
+            startIndex = options.startIndex,
+            stopIndex = options.stopIndex,
+            sliceType = options.sliceType,
+            period = options.period,
+            $colors = options.$colors,
+            xAxis = options.xAxis,
+            currentIndex = options.currentIndex;
+        var scaleLinear = this.getScale();
+        var volume = typeof data[currentIndex] !== 'undefined' ? this.parseVolume(data[currentIndex][columns.indexOf('volume')]) + '手' : '-手';
+        var volumeStateText = '成交量 ' + volume;
+        var volumeStateTextWidth = measureText(volumeStateText).width;
+        var volumeStateTextLeft = volumeStateTextWidth + 5;
+        result.texts.push({
+          x: left,
+          y: floor((stateHeight - 10) / 2),
+          text: volumeStateText,
+          fill: $colors.text,
+          fontSize: 11,
+          align: 'left',
+          verticalAlign: 'middle'
+        });
+        maList.forEach(function (maItem) {
+          var maDays = Number(maItem.replace(/[^\d]/g, '')); // `注意`：需要从所有的成交量中计算均线
+
+          var allVolumeData = ma(_this3.allDataSet.getData('volumeData'), maDays);
+          var volumeData = allVolumeData.slice(startIndex, stopIndex);
+          var maKeyVal = maItem.toLocaleUpperCase() + ':' + (typeof volumeData[currentIndex] !== 'undefined' ? _this3.parseVolume(volumeData[currentIndex]) + '手' : '-手');
+          var maKeyValWidth = measureText(maKeyVal).width;
+          var lineOpts = {
+            ma: maDays,
+            stroke: $colors[maItem],
+            strokeWidth: 1,
+            points: []
+          };
+          volumeData.forEach(function (d, i) {
+            if (scaleLinear(d)) {
+              lineOpts.points.push(left + i * kspan + kwidth / 2, scaleLinear(d), left + i * kspan + kwidth / 2, scaleLinear(d));
+            }
+          });
+          result.lines.push(lineOpts);
+          var textOpts = {
+            x: left + volumeStateTextLeft,
+            y: floor((stateHeight - 10) / 2),
+            text: maKeyVal,
+            fill: $colors[maItem],
+            fontSize: 11,
+            align: 'left',
+            verticalAlign: 'middle'
+          };
+          result.texts.push(textOpts);
+          volumeStateTextLeft += maKeyValWidth + 5;
+        });
+        return result;
+      }
+    }, {
       key: "getYTickData",
       value: function getYTickData(options) {
         var result = {
@@ -3246,8 +3476,9 @@
             $colors = options.$colors;
         var extent = this.getData('extent');
         var span = (figureHeight - stateHeight) / 2; // 最高刻度值
+        // debugger
 
-        var text = this.parseVolume(extent.max);
+        var text = this.parseAmount(extent.max);
         var xText = left ? left - measureText(text).width - 2 : 1;
         result.texts.push({
           x: xText,
@@ -3261,7 +3492,7 @@
 
         for (var i = 1; i < 2; i++) {
           text = extent.max - span * i / (figureHeight - stateHeight) * (extent.max - extent.min);
-          text = this.parseVolume(text);
+          text = this.parseAmount(text);
           xText = left ? left - measureText(text).width - 2 : 1;
           result.texts.push({
             x: xText,

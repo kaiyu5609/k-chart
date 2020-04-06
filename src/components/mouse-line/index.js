@@ -24,7 +24,7 @@ class MouseLine extends EventEmitter {
     addMouseLine(options) {
         const context = this.context
         const { ctype, width, height, left, figureWidth, figureHeight, stateHeight, period, xAxis, tooltips } = this.$options
-        const { type, mouseIndex, isValidPoint, mouseX, mouseY, isDrag, emitter, isLongTouch } = options
+        const { type, mouseIndex, isValidPoint, mouseX, mouseY, isDrag, emitter, isLongTouch, isPinch } = options
 
         var data = {
             lines: [],
@@ -36,8 +36,7 @@ class MouseLine extends EventEmitter {
         // TODO
         if (
             type === false || 
-            mouseIndex >= 0 && !isDrag &&
-            isValidPoint ||
+            mouseIndex >= 0 && !isDrag && !isPinch && isValidPoint ||
             isLongTouch
         ) {
             data = this.dataSet.getMouseLineData({
@@ -55,7 +54,9 @@ class MouseLine extends EventEmitter {
                 emitter
             })
 
-            context.currentIndex = context.mouseIndex
+            context.currentIndex = typeof mouseIndex != null
+                ? mouseIndex
+                : context.mouseIndex
 
             if (tooltips) {
                 this.tooltips.setData(data.item)

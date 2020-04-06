@@ -21,6 +21,8 @@ class Volume extends Chart {
             figureWidth: 640,
             stateHeight: 20,
             figureHeight: 70,
+
+            maList: ['ma5', 'ma10']
         }
 
         options = this.$options = Object.assign(this.$options, defaults, options)
@@ -103,6 +105,12 @@ class Volume extends Chart {
                     break
             }
 
+            if (y < stateHeight || y > figureHeight) {
+                self.removeMouseLine()
+                self.emit('remove-mouse-line')
+                return
+            }
+
             if (self._isDrag) {
                 if (Math.abs(self._mouseX - x) < kspan) {
                     return
@@ -111,11 +119,10 @@ class Volume extends Chart {
                 var index = Math.round((self._mouseX - x) / kspan)
                 
                 if (x >= 0) {
-                    self.moveChart(index)
+                    self.moveChart(index * 2)
+                    self._isDragging = true
                 }
-            }
-
-            if (self._isPinch && touches && touches.length == 2) {
+            } else if (self._isPinch && touches && touches.length == 2) {
                 pinchDis = getPinchDis(self._touches, touches)
                 self.scaleChart(Math.sign(pinchDis))
             }
@@ -139,7 +146,8 @@ class Volume extends Chart {
                 mouseX: self._mouseX,
                 mouseY: self._mouseY,
                 isDrag: self._isDrag,
-
+                isPinch: self._isPinch,
+                isLongTouch: self._isLongTouch
             })
 
             // TODO
@@ -150,7 +158,9 @@ class Volume extends Chart {
                 isValidPoint: isValidPoint,
                 mouseX: self._mouseX,
                 mouseY: self._mouseY,
-                isDrag: self._isDrag
+                isDrag: self._isDrag,
+                isPinch: self._isPinch,
+                isLongTouch: self._isLongTouch
             })
         }
 
@@ -158,6 +168,10 @@ class Volume extends Chart {
 
         this.stage.on('mousemove', moveHandler)
         this.stage.on('touchmove', moveHandler)
+
+        this.mouseLine.on('mouseline-move', () => {
+            self.drawMaLine()
+        })
     }
 
     addVrect() {
@@ -234,6 +248,56 @@ class Volume extends Chart {
         return this
     }
 
+    drawMaLine() {
+        var { 
+            width, 
+            height,
+            left,
+            stateHeight,
+            figureWidth,
+            kspan,
+            kwidth,
+            maList,
+            startIndex,
+            stopIndex
+        } = this.$options
+
+        if (!this.groups.maline) {
+            this.groups.maline = new Konva.Group({
+                x: 0, y: 0, width, height
+            })
+        } else {
+            this.groups.maline.destroy()
+        }
+
+        var data = this.dataSet.getMaLineData({
+            left,
+            stateHeight, 
+            figureWidth,
+            kspan,
+            kwidth,
+            maList,
+            startIndex,
+            stopIndex,
+            currentIndex: this.currentIndex,
+            $colors: this.$colors
+        })
+
+        data.lines.forEach(opts => {
+            var node = new Konva.Line(opts)
+            this.groups.maline.add(node)
+        })
+
+        data.texts.forEach(opts => {
+            var node = new Konva.Text(opts)
+            this.groups.maline.add(node)
+        })
+        
+        this.layers.maLine.add(this.groups.maline).draw()
+
+        return this
+    }
+
     setScale() {
         var { 
             maList, 
@@ -270,6 +334,7 @@ class Volume extends Chart {
         this.setScale()
 
         this.drawVolume()
+            .drawMaLine()
             .drawTickLabel()
     }
 

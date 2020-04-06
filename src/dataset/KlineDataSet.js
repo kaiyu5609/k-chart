@@ -189,7 +189,6 @@ class KlineDataSet extends KlineVolumeDataSet {
         }
 
         maList.forEach((maItem) => {
-            var i = !1
             var maDays = Number(maItem.replace(/[^\d]/g, ''))
 
             // `注意`：需要从所有的收盘价中计算均线

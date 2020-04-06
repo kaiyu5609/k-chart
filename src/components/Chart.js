@@ -64,7 +64,8 @@ class Chart extends EventEmitter {
             'blue': '#06c',
 
             'close': '#06c',
-            'text': '#333'
+            // 'text': '#333'
+            'text': '#43474c'
         }
 
         this.mouseIndex = 0
@@ -151,47 +152,50 @@ class Chart extends EventEmitter {
 
             switch (e.type) {
                 case 'touchstart':
+                    self._isDrag = true
+                    
                     self._mouseX = self.stage.getPointerPosition().x - left
                     self._mouseY = self.stage.getPointerPosition().y
-
+                    
                     if (touches && touches.length == 2) {
-                        self._isPinch = true
-                        self._touches = touches
-                    }
-
-                    self._longTouchtimer = setTimeout(() => {
-                        if (self._isPinch) {
-                            return
+                        if (!self._isDragging) {
+                            // 当单指moveChart变成双指moveChart时，仍然算是moveChart，而不是scaleChart
+                            self._isDrag = false
                         }
-                        
-                        self._isDrag = false
+                        self._isPinch = true
+                        self._isLongTouch = false
+                        self._touches = touches
+                    } else {
+                        self._longTouchtimer = setTimeout(() => {
+                            self._isLongTouch = true
+                            self._isDrag = false
 
-                        self.mouseIndex = xData.findIndex(v => {
-                            // return v >= x
-                            return (v + kwidth) >= self._mouseX
-                        })
-
-                        self.addMouseLine({ 
-                            emitter: 'self',
-                            type: true,
-                            mouseIndex: self.mouseIndex,
-                            mouseX: self._mouseX,
-                            mouseY: self._mouseY,
-                            isDrag: false,
-                            isLongTouch: true
-                        })
-
-                        self.emit('add-mouse-line', {
-                            emitter: 'other',
-                            type: true,
-                            mouseIndex: self.mouseIndex,
-                            mouseX: self._mouseX,
-                            mouseY: self._mouseY,
-                            isDrag: false,
-                            isLongTouch: true
-                        })
-                    }, 300)
-
+                            self.mouseIndex = xData.findIndex(v => {
+                                // return v >= x
+                                return (v + kwidth) >= self._mouseX
+                            })
+    
+                            self.addMouseLine({ 
+                                emitter: 'self',
+                                type: true,
+                                mouseIndex: self.mouseIndex,
+                                mouseX: self._mouseX,
+                                mouseY: self._mouseY,
+                                isDrag: false,
+                                isLongTouch: true
+                            })
+    
+                            self.emit('add-mouse-line', {
+                                emitter: 'other',
+                                type: true,
+                                mouseIndex: self.mouseIndex,
+                                mouseX: self._mouseX,
+                                mouseY: self._mouseY,
+                                isDrag: false,
+                                isLongTouch: true
+                            })
+                        }, 300)
+                    }
                     break
                 case 'mousedown':
                     self._mouseX = e.evt.offsetX - left
@@ -201,18 +205,32 @@ class Chart extends EventEmitter {
         }
 
         function endHandler(e) {
+            var touches = e.evt.touches
+
             switch (e.type) {
                 case 'touchend':
-                    self._isDrag = true
-                    self.removeMouseLine()
-                    self.emit('remove-mouse-line')
+                    if (touches && touches.length == 0) {
+                        self._isDrag = false
+                        self._isDragging = false
+                    }
+                    if (self._isLongTouch) {
+                        self._isLongTouch = false
+                        setTimeout(() => {
+                            self.removeMouseLine()
+                            self.emit('remove-mouse-line')
+                        }, 300)
+                    }
                     break
                 case 'mouseup':
                     self._isDrag = false
+                    self._isDragging = false
                     break
             }
-
-            self._isPinch = false
+            
+            // 当touchend之后，touchmove还会执行，所以这里延迟将_isPinch设置为false
+            setTimeout(() => {
+                self._isPinch = false
+            }, 100)
 
             self._longTouchtimer && clearTimeout(self._longTouchtimer)
         }
@@ -369,16 +387,19 @@ class Chart extends EventEmitter {
              * 2. 向左钻取数据，startIndex >= -allKlineData.length
              * 3. this.stop
              */
-            if (
-                index > 0 && stopIndex >= allKlineData.length || 
-                index < 0 && startIndex + allKlineData.length <= 0 || 
-                this.stop
-            ) {
+            if ((index > 0 && stopIndex >= allKlineData.length) || (index < 0 && startIndex + allKlineData.length <= 0) || this.stop) {
                 return
             }
 
             options.startIndex = Math.min(-count, startIndex + index)
             options.stopIndex = Math.min(allKlineData.length, stopIndex + index)
+
+            if (options.startIndex <= -allKlineData.length) {
+                options.startIndex = -allKlineData.length
+            }
+            if (options.stopIndex <= count) {
+                options.stopIndex = count
+            }
 
             if (
                 options.startIndex + allKlineData.length < count / 2 && 
@@ -458,6 +479,8 @@ class Chart extends EventEmitter {
 
         var allKlineData = this.allDataSet.getData()
 
+        
+
         options.kwidth = scale > 0 
             ? Math.min(17, kwidth + scale)
             : Math.max(0, kwidth + scale)
@@ -476,6 +499,14 @@ class Chart extends EventEmitter {
                 })
             } else {
                 options.startIndex = -options.count - (allKlineData.length - options.stopIndex)
+
+                if (options.startIndex <= -allKlineData.length) {
+                    options.startIndex = -allKlineData.length
+                }
+                if (options.stopIndex <= options.count) {
+                    options.stopIndex = options.count
+                }
+
                 this.update()
             }
 
@@ -498,6 +529,30 @@ class Chart extends EventEmitter {
 
     destroy() {
         // TODO
+    }
+
+    connect(components) {
+        if (!Array.isArray(components)) {
+            components = [components]
+        }
+
+        components.forEach((component) => {
+            this.on('move-chart', ({ index }) => {
+                component.moveChart(index, { emitter: this })
+            })
+            .on('scale-chart', ({ scale }) => {
+                component.scaleChart(scale, { emitter: this })
+            })
+            .on('reset-scale-chart', () => {
+                component.resetScaleChart({ emitter: this })
+            })
+            .on('add-mouse-line', (data) => {
+                component.addMouseLine(data)
+            })
+            .on('remove-mouse-line', () => {
+                component.removeMouseLine()
+            })
+        })
     }
 
 }

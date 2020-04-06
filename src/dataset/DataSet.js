@@ -1,5 +1,5 @@
 import EventEmitter from 'events'
-import { parseVolume, floor, measureText } from '../core/util/index'
+import { parseVolume, parseAmount, floor, measureText } from '../core/util/index'
 
 class DataSet extends EventEmitter { 
     constructor(options = {}) {
@@ -37,6 +37,20 @@ class DataSet extends EventEmitter {
                 ? ''.concat(parseVolume(val), '股') 
                 : parseVolume(val)
         
+        return flag ? num : parseFloat(num)
+    }
+
+    parseAmount(val = 0, quoteLotSize = 100, quoteType = 11, flag = true) {
+        if (null === val) {
+            return '--'
+        }
+
+        var num = val
+
+        num = [11, 12, 13, 14, 15, 17, 60, 61, 81].indexOf(+quoteType) > -1 
+            ? ''.concat(parseAmount(val / quoteLotSize)) 
+            : parseAmount(val)
+
         return flag ? num : parseFloat(num)
     }
 }

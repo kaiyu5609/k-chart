@@ -55,37 +55,8 @@ var volume = new Volume({
     tooltips: false
 })
 
-kline.on('move-chart', ({ index }) => {
-    volume.moveChart(index, { emitter: kline })
-})
-.on('scale-chart', ({ scale }) => {
-    volume.scaleChart(scale, { emitter: kline })
-})
-.on('reset-scale-chart', () => {
-    volume.resetScaleChart({ emitter: kline })
-})
-.on('add-mouse-line', (data) => {
-    volume.addMouseLine(data)
-})
-.on('remove-mouse-line', () => {
-    volume.removeMouseLine()
-})
-
-volume.on('move-chart', ({ index }) => {
-    kline.moveChart(index, { emitter: volume })
-})
-.on('scale-chart', ({ scale }) => {
-    kline.scaleChart(scale, { emitter: volume })
-})
-.on('reset-scale-chart', () => {
-    kline.resetScaleChart({ emitter: volume })
-})
-.on('add-mouse-line', (data) => {
-    kline.addMouseLine(data)
-})
-.on('remove-mouse-line', () => {
-    kline.removeMouseLine()
-})
+kline.connect(volume)
+volume.connect(kline)
 
 console.log('kline', kline)
 console.log('volume', volume)
@@ -153,11 +124,11 @@ pressBtn($btnWalkRight, function() {
 function pressBtn(el, callback) {
     var timer = 0
 
-    el.on('mousedown', function() {
+    el.on('mousedown touchstart', function() {
         timer = setInterval(callback, 200)
     })
 
-    el.on('mouseup', function() {
+    el.on('mouseup touchend', function() {
         clearInterval(timer)
     })
 }

@@ -181,11 +181,7 @@ class Kline extends Chart {
                     break
             }
 
-            /**
-             * `hank`
-             * 鼠标在右上工具栏内，不计算如 move 的范围
-             */
-            if (x > (figureWidth - 150) && y < stateHeight) {
+            if (y < stateHeight || y > figureHeight) {
                 self.removeMouseLine()
                 self.emit('remove-mouse-line')
                 return
@@ -197,13 +193,12 @@ class Kline extends Chart {
                 }
                 
                 var index = Math.round((self._mouseX - x) / kspan)
-                
-                if (x >= 0) {
-                    self.moveChart(index)
-                }
-            }
 
-            if (self._isPinch && touches && touches.length == 2) {
+                if (x >= 0) {
+                    self.moveChart(index * 2)
+                    self._isDragging = true
+                }
+            } else if (self._isPinch && touches && touches.length == 2) {
                 pinchDis = getPinchDis(self._touches, touches)
                 self.scaleChart(Math.sign(pinchDis))
             }
@@ -212,6 +207,8 @@ class Kline extends Chart {
                 // return v >= x
                 return (v + kwidth) >= x
             })
+
+            // $('#tips-1').text(self._mouseX + ',' + x + ',' + index + ',' + options.startIndex + ',' + options.stopIndex)
             
             self._mouseX = x
             self._mouseY = y
@@ -226,7 +223,9 @@ class Kline extends Chart {
                 isValidPoint: isValidPoint,
                 mouseX: self._mouseX,
                 mouseY: self._mouseY,
-                isDrag: self._isDrag
+                isDrag: self._isDrag,
+                isPinch: self._isPinch,
+                isLongTouch: self._isLongTouch
             })
 
             // TODO
@@ -237,7 +236,9 @@ class Kline extends Chart {
                 isValidPoint: isValidPoint,
                 mouseX: self._mouseX,
                 mouseY: self._mouseY,
-                isDrag: self._isDrag
+                isDrag: self._isDrag,
+                isPinch: self._isPinch,
+                isLongTouch: self._isLongTouch
             })
         }
 
@@ -262,6 +263,7 @@ class Kline extends Chart {
         }
 
         this.stage.on('click', clickHandler)
+        this.stage.on('touchstart', clickHandler)
 
         this.stage.on('mousemove', moveHandler)
         this.stage.on('touchmove', moveHandler)
