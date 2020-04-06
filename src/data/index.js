@@ -6821,6 +6821,13 @@ var startIndex = 0,
     stopIndex = klineData.length,
     data
 
+
+export function resetKlineData() {
+  startIndex = 0
+  stopIndex = klineData.length
+  data = undefined
+}
+  
 export function queryKlineData(count) {
     if (stopIndex <= 0) {
         return []

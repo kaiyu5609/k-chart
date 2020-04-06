@@ -5,16 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>kline example</title>
     <style>
-        div.wrapper {
+        body.full-chart div.chart-container-wrapper {
+          position: fixed;
+          left: 0;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #fff;
+          z-index: 999;
+        }
+
+        div.chart-container {
             position: relative;
             margin: 45px auto;
-            width: 640px;
+            /* width: 640px; */
+            color: #333;
+            /* min-height: 422px; */
         }
     </style>
   </head>
   <body>
 
-    <div class="wrapper">
+    <div class="chart-container-wrapper">
+      <div class="chart-container">
         <div class="toolbar" style="display: none;">
             <span id="zoom-back" class="btn">=</span>
             <span id="zoom-out" class="btn">+</span>
@@ -22,11 +35,13 @@
             <span id="walk-left" class="btn"><</span>
             <span id="walk-right" class="btn">></span>
             <span id="slice-type" class="btn">!</span>
+            <span id="fullsize" class="btn">全屏显示</span>
         </div>
         <!-- <div id="tips-1"></div> -->
         <!-- <div id="tips-2"></div> -->
         <div id="chart"></div>
         <div id="volume"></div>
+      </div>
     </div>
 
     <script src="../../lib/jquery/jquery.js"></script>

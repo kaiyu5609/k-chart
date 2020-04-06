@@ -686,6 +686,7 @@ if(true) {
         this.setOptions({
           left: left,
           figureWidth: figureWidth,
+          _kwidth: kwidth,
           kspan: kspan,
           paddingY: paddingY,
           count: count,
@@ -1045,11 +1046,13 @@ if(true) {
       key: "resetScaleChart",
       value: function resetScaleChart() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var kwidth = this.$options.kwidth;
+        var _this$$options4 = this.$options,
+            kwidth = _this$$options4.kwidth,
+            _kwidth = _this$$options4._kwidth;
         var emitter = data.emitter;
 
-        if (kwidth !== 6) {
-          this.$options.kwidth = 6;
+        if (kwidth !== _kwidth) {
+          this.$options.kwidth = _kwidth;
           this.scaleChart(0, {
             reset: true,
             emitter: emitter
@@ -1500,7 +1503,7 @@ if(true) {
         left: 0,
         width: 640,
         height: 220,
-        figureWidth: 640,
+        // figureWidth: 640,
         stateHeight: 20,
         figureHeight: 220,
         maList: ['ma5', 'ma10', 'ma20', 'ma30', 'ma60'],
@@ -1976,7 +1979,7 @@ if(true) {
         left: 0,
         width: 640,
         height: 90,
-        figureWidth: 640,
+        // figureWidth: 640,
         stateHeight: 20,
         figureHeight: 70,
         maList: ['ma5', 'ma10']
@@ -3205,6 +3208,12 @@ if(true) {
       stopIndex = klineData.length,
       data;
 
+  function resetKlineData() {
+    startIndex = 0;
+    stopIndex = klineData.length;
+    data = undefined;
+  }
+
   function queryKlineData(count) {
     if (stopIndex <= 0) {
       return [];
@@ -3239,6 +3248,7 @@ if(true) {
         chgData: [],
         volumeData: []
       };
+      resetKlineData();
       return _this;
     }
 
@@ -3788,7 +3798,7 @@ module.exports = function () {
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../node_modules/css-loader/dist/runtime/api.js */ "../node_modules/css-loader/dist/runtime/api.js");
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "html, body, ul {\n  margin: 0;\n  padding: 0; }\n\n.toolbar {\n  position: absolute;\n  top: 2px;\n  right: 0;\n  z-index: 999; }\n\n.toolbar span {\n  float: left;\n  margin-left: 5px;\n  width: 20px;\n  height: 16px;\n  font-size: 12px;\n  cursor: pointer;\n  color: #555;\n  background-color: #eee;\n  text-align: center;\n  line-height: 16px;\n  border-radius: 20%;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n   -ms-user-select: none;\n       user-select: none; }\n\n.toolbar span:hover {\n  color: #06c;\n  background-color: #e2f8ff; }\n\n#k-tooltips {\n  width: 132px; }\n\n#k-tooltips ul {\n  list-style: none;\n  width: 120px;\n  background: rgba(255, 255, 255, 0.9);\n  border: 1px solid rgba(218, 222, 229, 0.6);\n  font-size: 12px;\n  line-height: 18px;\n  padding: 5px;\n  margin: 0; }\n\n#k-tooltips ul li {\n  list-style: none; }\n\n#k-tooltips ul li span {\n  text-align: left;\n  color: #43474c; }\n\n#k-tooltips ul li span:last-child {\n  float: right; }\n\n.sel-list {\n  display: none;\n  list-style: none;\n  position: absolute;\n  top: 21px;\n  left: -20px;\n  line-height: 26px;\n  width: 70px;\n  box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.4);\n  background: #fff;\n  text-align: center;\n  z-index: 222;\n  font-size: 12px;\n  cursor: pointer; }\n\n.sel-list li.active {\n  color: #06c; }\n", ""]);
+exports.push([module.i, "html, body, ul {\n  margin: 0;\n  padding: 0; }\n\n.toolbar {\n  position: absolute;\n  top: 2px;\n  right: 0;\n  z-index: 999; }\n\n.toolbar span {\n  float: left;\n  margin-left: 5px;\n  width: 20px;\n  height: 16px;\n  font-size: 12px;\n  cursor: pointer;\n  color: #555;\n  background-color: #eee;\n  text-align: center;\n  line-height: 16px;\n  border-radius: 5px;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n   -ms-user-select: none;\n       user-select: none; }\n\n.toolbar span#fullsize {\n  width: 60px; }\n\n.toolbar span:hover {\n  color: #06c;\n  background-color: #e2f8ff; }\n\n#k-tooltips {\n  width: 132px; }\n\n#k-tooltips ul {\n  list-style: none;\n  width: 120px;\n  background: rgba(255, 255, 255, 0.9);\n  border: 1px solid rgba(218, 222, 229, 0.6);\n  font-size: 12px;\n  line-height: 18px;\n  padding: 5px;\n  margin: 0; }\n\n#k-tooltips ul li {\n  list-style: none; }\n\n#k-tooltips ul li span {\n  text-align: left;\n  color: #43474c; }\n\n#k-tooltips ul li span:last-child {\n  float: right; }\n\n.sel-list {\n  display: none;\n  list-style: none;\n  position: absolute;\n  top: 21px;\n  left: -20px;\n  line-height: 26px;\n  width: 70px;\n  box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, 0.4);\n  background: #fff;\n  text-align: center;\n  z-index: 222;\n  font-size: 12px;\n  cursor: pointer; }\n\n.sel-list li.active {\n  color: #06c; }\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -5821,6 +5831,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 console.log('kchart', kchart__WEBPACK_IMPORTED_MODULE_0___default.a);
+window.KChart = window.KChart || {};
 const {
   Kline,
   KlineDataSet,
@@ -5828,104 +5839,177 @@ const {
   VolumeDataSet,
   Volume
 } = kchart__WEBPACK_IMPORTED_MODULE_0___default.a;
-var columns = ["timestamp", // 时间
-"open", // 开
-"high", // 高
-"low", // 低
-"close", // 收
-"volume", // 成交量
-"amount", // 成交额
-"chg", // 涨跌额
-"percent", // 涨跌幅
-"turnoverrate" // 换手率
-];
-var remoteDataSet = new RemoteDataSet({
-  columns: columns
-});
-var kDataSet = new KlineDataSet({
-  columns: columns,
-  allDataSet: remoteDataSet
-});
-var vDataSet = new VolumeDataSet({
-  columns: columns,
-  allDataSet: remoteDataSet
-});
-var kline = new Kline({
-  el: '#chart',
-  // left: 45,
-  // mouseLineType: true,
-  allDataSet: remoteDataSet,
-  dataSet: kDataSet
-});
-var volume = new Volume({
-  el: '#volume',
-  allDataSet: remoteDataSet,
-  dataSet: vDataSet,
-  // autoFetchData: false,
-  tooltips: false
-});
-kline.connect(volume);
-volume.connect(kline);
-console.log('kline', kline);
-console.log('volume', volume); // setTimeout(() => {
-
-setInterval(() => {// kline.$options.sliceType = 'fill'
-  // kline.update()
-  // kline.moveChart(-1)
-}, 1000);
+const CHART_DEFAULT_WIDTH = 640;
+var $body = $('body');
+var $chartContainer = $('.chart-container');
 var $toolbar = $('.toolbar');
-var $btnZoomBack = $('#zoom-back');
-var $btnZoomOut = $('#zoom-out');
-var $btnZoomIn = $('#zoom-on');
-var $btnWalkLeft = $('#walk-left');
-var $btnWalkRight = $('#walk-right');
-var $btnSliceType = $('#slice-type');
-setTimeout(() => {
-  $toolbar.show();
-});
-$btnZoomBack.on('click', function () {
-  kline.resetScaleChart();
-});
-$btnZoomOut.on('click', function () {
-  kline.scaleChart(1);
-});
-$btnZoomIn.on('click', function () {
-  kline.scaleChart(-1);
-});
-$btnWalkLeft.on('click', function () {
-  kline.moveChartWithMouseLine(-1);
-});
-$btnWalkRight.on('click', function () {
-  kline.moveChartWithMouseLine(1);
-});
-$btnSliceType.on('click', function () {
-  kline.$options.sliceType = !kline.$options.sliceType;
-  volume.$options.sliceType = !volume.$options.sliceType;
-  kline.update();
-  volume.update();
-});
-pressBtn($btnZoomOut, function () {
-  kline.scaleChart(5);
-});
-pressBtn($btnZoomIn, function () {
-  kline.scaleChart(-5);
-});
-pressBtn($btnWalkLeft, function () {
-  kline.moveChartWithMouseLine(-5);
-});
-pressBtn($btnWalkRight, function () {
-  kline.moveChartWithMouseLine(5);
-});
+var $toolbarBtns = $toolbar.find('.btn');
+var $btnFullSize = $('#fullsize');
+var isMobile = false;
+var $toolbarStyle1 = {
+  top: 2
+};
+var $toolbarStyle2 = {
+  top: 21
+};
+var $toolbarBtnStyle1 = {
+  'background-color': '#eee'
+};
+var $toolbarBtnStyle2 = {
+  'background-color': 'rgba(238, 238, 238, .5)'
+};
 
-function pressBtn(el, callback) {
-  var timer = 0;
-  el.on('mousedown touchstart', function () {
-    timer = setInterval(callback, 200);
-  });
-  el.on('mouseup touchend', function () {
-    clearInterval(timer);
-  });
+if (/(iPhone|iPad|iPod|iOS|Android)/i.test(navigator.userAgent)) {
+  isMobile = true;
+  $toolbar.css($toolbarStyle2);
+  $toolbarBtns.css($toolbarBtnStyle2);
+  $btnFullSize.hide();
 }
+
+function createKChart(chartWidth) {
+  $chartContainer.width(chartWidth);
+  var columns = ["timestamp", // 时间
+  "open", // 开
+  "high", // 高
+  "low", // 低
+  "close", // 收
+  "volume", // 成交量
+  "amount", // 成交额
+  "chg", // 涨跌额
+  "percent", // 涨跌幅
+  "turnoverrate" // 换手率
+  ];
+  var remoteDataSet = new RemoteDataSet({
+    columns: columns
+  });
+  var kDataSet = new KlineDataSet({
+    columns: columns,
+    allDataSet: remoteDataSet
+  });
+  var vDataSet = new VolumeDataSet({
+    columns: columns,
+    allDataSet: remoteDataSet
+  });
+  var kline = new Kline({
+    el: '#chart',
+    width: chartWidth,
+    kwidth: isMobile ? 4 : 6,
+    // left: 45,
+    // mouseLineType: true,
+    allDataSet: remoteDataSet,
+    dataSet: kDataSet
+  });
+  var volume = new Volume({
+    el: '#volume',
+    width: chartWidth,
+    kwidth: isMobile ? 4 : 6,
+    allDataSet: remoteDataSet,
+    dataSet: vDataSet,
+    // autoFetchData: false,
+    tooltips: false
+  });
+  kline.connect(volume);
+  volume.connect(kline);
+  console.log('kline', kline);
+  console.log('volume', volume); // setTimeout(() => {
+
+  setInterval(() => {// kline.$options.sliceType = 'fill'
+    // kline.update()
+    // kline.moveChart(-1)
+  }, 1000);
+  var $toolbar = $('.toolbar');
+  var $btnZoomBack = $('#zoom-back');
+  var $btnZoomOut = $('#zoom-out');
+  var $btnZoomIn = $('#zoom-on');
+  var $btnWalkLeft = $('#walk-left');
+  var $btnWalkRight = $('#walk-right');
+  var $btnSliceType = $('#slice-type');
+  setTimeout(() => {
+    $toolbar.show();
+  });
+  $btnZoomBack.on('click', function () {
+    kline.resetScaleChart();
+  });
+  $btnZoomOut.on('click', function () {
+    kline.scaleChart(1);
+  });
+  $btnZoomIn.on('click', function () {
+    kline.scaleChart(-1);
+  });
+  $btnWalkLeft.on('click', function () {
+    kline.moveChartWithMouseLine(-1);
+  });
+  $btnWalkRight.on('click', function () {
+    kline.moveChartWithMouseLine(1);
+  });
+  $btnSliceType.on('click', function () {
+    kline.$options.sliceType = !kline.$options.sliceType;
+    volume.$options.sliceType = !volume.$options.sliceType;
+    kline.update();
+    volume.update();
+  });
+  pressBtn($btnZoomOut, function () {
+    kline.scaleChart(5);
+  });
+  pressBtn($btnZoomIn, function () {
+    kline.scaleChart(-5);
+  });
+  pressBtn($btnWalkLeft, function () {
+    kline.moveChartWithMouseLine(-5);
+  });
+  pressBtn($btnWalkRight, function () {
+    kline.moveChartWithMouseLine(5);
+  });
+
+  function pressBtn(el, callback) {
+    var timer = 0;
+    el.on('mousedown touchstart', function () {
+      timer = setInterval(callback, 200);
+    });
+    el.on('mouseup touchend', function () {
+      clearInterval(timer);
+    });
+  }
+}
+
+createKChart(isMobile ? 0.95 * innerWidth : CHART_DEFAULT_WIDTH);
+$btnFullSize.on('click touchstart', function () {
+  var isFullSize = $body.hasClass('full-chart');
+  var chartWidth;
+
+  if (isFullSize) {
+    chartWidth = CHART_DEFAULT_WIDTH;
+    $btnFullSize.text('全屏显示');
+    $body.removeClass('full-chart');
+  } else {
+    chartWidth = 0.95 * innerWidth;
+    $btnFullSize.text('退出全屏');
+    $body.addClass('full-chart');
+  }
+
+  setTimeout(() => {
+    createKChart(chartWidth);
+  }, 0);
+}); // 监听屏幕方向
+
+window.onorientationchange = function () {
+  var chartWidth = 0.95 * innerWidth;
+  createKChart(chartWidth);
+
+  switch (window.orientation) {
+    case -90:
+    case 90:
+      $toolbar.css($toolbarStyle1);
+      $toolbarBtns.css($toolbarBtnStyle1);
+      break;
+
+    case 0:
+    case 180:
+      $toolbar.css($toolbarStyle2);
+      $toolbarBtns.css($toolbarBtnStyle2);
+      break;
+  }
+};
 
 /***/ }),
 

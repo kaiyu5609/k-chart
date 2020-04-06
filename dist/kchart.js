@@ -664,6 +664,7 @@
         this.setOptions({
           left: left,
           figureWidth: figureWidth,
+          _kwidth: kwidth,
           kspan: kspan,
           paddingY: paddingY,
           count: count,
@@ -1024,11 +1025,13 @@
       key: "resetScaleChart",
       value: function resetScaleChart() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var kwidth = this.$options.kwidth;
+        var _this$$options4 = this.$options,
+            kwidth = _this$$options4.kwidth,
+            _kwidth = _this$$options4._kwidth;
         var emitter = data.emitter;
 
-        if (kwidth !== 6) {
-          this.$options.kwidth = 6;
+        if (kwidth !== _kwidth) {
+          this.$options.kwidth = _kwidth;
           this.scaleChart(0, {
             reset: true,
             emitter: emitter
@@ -1471,7 +1474,7 @@
         left: 0,
         width: 640,
         height: 220,
-        figureWidth: 640,
+        // figureWidth: 640,
         stateHeight: 20,
         figureHeight: 220,
         maList: ['ma5', 'ma10', 'ma20', 'ma30', 'ma60'],
@@ -1947,7 +1950,7 @@
         left: 0,
         width: 640,
         height: 90,
-        figureWidth: 640,
+        // figureWidth: 640,
         stateHeight: 20,
         figureHeight: 70,
         maList: ['ma5', 'ma10']
@@ -3174,6 +3177,11 @@
   var startIndex = 0,
       stopIndex = klineData.length,
       data;
+  function resetKlineData() {
+    startIndex = 0;
+    stopIndex = klineData.length;
+    data = undefined;
+  }
   function queryKlineData(count) {
     if (stopIndex <= 0) {
       return [];
@@ -3208,6 +3216,7 @@
         chgData: [],
         volumeData: []
       };
+      resetKlineData();
       return _this;
     }
 

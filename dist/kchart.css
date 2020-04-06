@@ -19,11 +19,14 @@ html, body, ul {
   background-color: #eee;
   text-align: center;
   line-height: 16px;
-  border-radius: 20%;
+  border-radius: 5px;
   -webkit-user-select: none;
   -moz-user-select: none;
    -ms-user-select: none;
        user-select: none; }
+
+.toolbar span#fullsize {
+  width: 60px; }
 
 .toolbar span:hover {
   color: #06c;

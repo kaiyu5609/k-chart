@@ -1,6 +1,6 @@
 import DataSet from './DataSet'
 
-import { queryKlineData } from '../data/index'
+import { queryKlineData, resetKlineData } from '../data/index'
 
 class RemoteDataSet extends DataSet {
     constructor(options) {
@@ -22,6 +22,8 @@ class RemoteDataSet extends DataSet {
             chgData: [],
             volumeData: []
         }
+
+        resetKlineData()
     }
 
     fetchKlineData(options) {

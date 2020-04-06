@@ -18,7 +18,7 @@ class Volume extends Chart {
             width: 640,
             height: 90,
 
-            figureWidth: 640,
+            // figureWidth: 640,
             stateHeight: 20,
             figureHeight: 70,
 

@@ -112,6 +112,7 @@ class Chart extends EventEmitter {
         this.setOptions({
             left,
             figureWidth,
+            _kwidth: kwidth,
             kspan,
             paddingY,
             count,
@@ -454,11 +455,11 @@ class Chart extends EventEmitter {
      * @param {*} data.flag 为true，外部触发的resetScaleChart
      */
     resetScaleChart(data = {}) {
-        var { kwidth } = this.$options
+        var { kwidth, _kwidth } = this.$options
         var { emitter } = data
 
-        if (kwidth !== 6) {
-            this.$options.kwidth = 6
+        if (kwidth !== _kwidth) {
+            this.$options.kwidth = _kwidth
             this.scaleChart(0, { reset: true, emitter })
 
             this.emit('reset-scale-chart')

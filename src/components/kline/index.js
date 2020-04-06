@@ -19,7 +19,7 @@ class Kline extends Chart {
             width: 640,
             height: 220,
 
-            figureWidth: 640,
+            // figureWidth: 640,
             stateHeight: 20,
             figureHeight: 220,
 
